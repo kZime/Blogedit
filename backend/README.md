@@ -2,9 +2,9 @@
 
 ## APIs
 
-| Method | Endpoint        | Description | Request Example    | Todo |
-| ------ | --------------- | ----------- | ------------------ | ---- |
-| POST   | `/api/register` | register    | `{ "username": "tom", "email": "t@a.com", "password": "123456" }` |  ❌ |
-| POST   | `/api/login`    | login       | `{ "email": "t@a.com", "password": "123456" }` | ❌ |
-| POST   | `/api/refresh`  | refresh     | `{ "refresh_token": "..." }` | ❌ |
-| GET    | `/api/user`     | get user    | `Authorization: Bearer <access_token>` | ❌ |
+| Method | Endpoint             | Description                                                                   |
+| ------ | -------------------- | ----------------------------------------------------------------------------- |
+| POST   | `/api/auth/register` | `{ username, email, password }`, return new user info (without password) |
+| POST   | `/api/auth/login`    | `{ email, password }`, return `{ access_token, refresh_token }`    |
+| POST   | `/api/auth/refresh`  | `{ refresh_token }`, return new `{ access_token, refresh_token }` |
+| GET    | `/api/user`          | get current user info (need to carry `Authorization: Bearer <access_token>` in Header) |

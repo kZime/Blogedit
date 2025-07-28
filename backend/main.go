@@ -4,6 +4,8 @@ import (
 	"backend/internal/database"
 	"log"
 
+	"backend/internal/router"
+
 	"github.com/joho/godotenv"
 )
 
@@ -14,9 +16,13 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
+	// init database
 	if err := database.Init(); err != nil {
 		log.Fatalf("failed to initialize the database: %v", err)
 	}
-	// 这里开始注册路由、启动 HTTP 服务…
+
+	// init router
+	r := router.Setup()
+	r.Run(":8080")
 
 }
