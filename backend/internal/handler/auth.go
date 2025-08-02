@@ -17,6 +17,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// ------------------------------------------------------------
+// register
+// ------------------------------------------------------------
+
 type registerRequest struct {
 	Username string `json:"username" binding:"required"`
 	Email    string `json:"email"    binding:"required,email"`
@@ -57,9 +61,10 @@ func Register(c *gin.Context) {
 }
 
 // ------------------------------------------------------------
+// login
+// ------------------------------------------------------------
 
 var (
-	jwtKey          = []byte(os.Getenv("JWT_SECRET"))
 	accessTokenTTL  = 15 * time.Minute
 	refreshTokenTTL = 7 * 24 * time.Hour
 )
@@ -90,6 +95,8 @@ func Login(c *gin.Context) {
 
 	// 3. sign token
 
+	var jwtKey = []byte(os.Getenv("JWT_SECRET"))
+
 	atClaims := jwt.MapClaims{"sub": user.ID, "exp": time.Now().Add(accessTokenTTL).Unix()}
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	accessToken, _ := at.SignedString(jwtKey)
@@ -101,5 +108,48 @@ func Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
+	})
+}
+
+// ------------------------------------------------------------
+// refresh token
+// ------------------------------------------------------------
+
+type refreshRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+func Refresh(c *gin.Context) {
+	var req refreshRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 1. parse and verify refresh token
+	var jwtKey = []byte(os.Getenv("JWT_SECRET"))
+
+	token, err := jwt.Parse(req.RefreshToken, func(t *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+	if err != nil || !token.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid refresh token"})
+		return
+	}
+	claims := token.Claims.(jwt.MapClaims)
+	userID := uint(claims["sub"].(float64))
+
+	// 2. sign new token
+	atClaims := jwt.MapClaims{"sub": userID, "exp": time.Now().Add(accessTokenTTL).Unix()}
+	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
+	newAccessToken, _ := at.SignedString(jwtKey)
+
+	rtClaims := jwt.MapClaims{"sub": userID, "exp": time.Now().Add(refreshTokenTTL).Unix()}
+	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
+	newRefreshToken, _ := rt.SignedString(jwtKey)
+
+	c.JSON(http.StatusOK, gin.H{
+		"access_token":  newAccessToken,
+		"refresh_token": newRefreshToken,
 	})
 }
