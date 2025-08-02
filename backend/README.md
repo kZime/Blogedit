@@ -3,6 +3,7 @@
 ## APIs
 
 | Method | Endpoint             | Description                                                                   |
+
 | ------ | -------------------- | ----------------------------------------------------------------------------- |
 | POST   | `/api/auth/register` | `{ username, email, password }`, return new user info (without password) |
 | POST   | `/api/auth/login`    | `{ email, password }`, return `{ access_token, refresh_token }`    |

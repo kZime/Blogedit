@@ -12,6 +12,7 @@ func Setup() *gin.Engine {
 	{
 		auth.POST("/register", handler.Register)
 		// TODO: add login, refresh
+		auth.POST("/login", handler.Login)
 	}
 	return r
 }
