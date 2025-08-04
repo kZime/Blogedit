@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"time"
 
 	"backend/internal/database"
 	"backend/internal/testutils"
@@ -160,6 +161,9 @@ func TestRefresh(t *testing.T) {
 	refreshPayload := refreshRequest{
 		RefreshToken: refreshToken,
 	}
+
+	// Time Sleep for 1 second
+	time.Sleep(1 * time.Second)
 
 	refreshBody, err := json.Marshal(refreshPayload)
 	if err != nil {
