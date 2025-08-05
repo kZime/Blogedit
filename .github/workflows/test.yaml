@@ -1,0 +1,50 @@
+name: Blog Auto CI
+
+on:
+  push:
+    branches:
+      - unit-test #should be main for future use
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test -d testdb"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Go
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.24
+
+      # Step 3: Set up environment variables
+      - name: Set environment variables
+        run: |
+          echo "DATABASE_DSN=host=localhost user=test password=test dbname=testdb port=5432 sslmode=disable TimeZone=UTC" >> $GITHUB_ENV
+          echo "JWT_SECRET=test-secret" >> $GITHUB_ENV
+
+      # Step 4: Install dependencies
+      - name: Install dependencies
+        run: go mod tidy
+
+      # Step 5: Run tests
+      - name: Run tests
+        run: go test ./... -v
