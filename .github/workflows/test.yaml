@@ -35,11 +35,11 @@ jobs:
         with:
           go-version: 1.24
 
-      # Step 3: Set up environment variables
-      - name: Set environment variables
+      # Step 3: Create .env.test file
+      - name: Create .env.test file
         run: |
-          echo "DATABASE_DSN=host=localhost user=test password=test dbname=testdb port=5432 sslmode=disable TimeZone=UTC" >> $GITHUB_ENV
-          echo "JWT_SECRET=test-secret" >> $GITHUB_ENV
+          echo "DATABASE_DSN=host=localhost user=test password=test dbname=testdb port=5432 sslmode=disable TimeZone=UTC" > backend/.env.test
+          echo "JWT_SECRET=test-secret" >> backend/.env.test
 
       # Step 4: Install dependencies
       - name: Install dependencies
