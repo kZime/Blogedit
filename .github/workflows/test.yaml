@@ -4,10 +4,58 @@ on:
   push:
     branches:
       - unit-test #should be main for future use
+      - main
 
 jobs:
-  test:
+  test-ubuntu:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test -d testdb"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Go
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.24
+
+      # Step 3: Create .env.test file
+      - name: Create .env.test file
+        run: |
+          echo "DATABASE_DSN=host=localhost user=test password=test dbname=testdb port=5432 sslmode=disable TimeZone=UTC" > backend/.env.test
+          echo "JWT_SECRET=test-secret" >> backend/.env.test
+
+      # Step 4: Install dependencies
+      - name: Install dependencies
+        run: |
+          cd backend
+          go mod tidy
+
+      # Step 5: Run tests
+      - name: Run tests
+        run: |
+          cd backend
+          go test ./... -v
+
+  test-macos:
+    runs-on: macos-latest
 
     services:
       postgres:
