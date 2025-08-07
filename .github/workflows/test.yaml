@@ -72,8 +72,7 @@ jobs:
           export PATH="$PG_PATH/bin:$PATH"
 
           # Create app user first, then create the DB owned by that user
-          psql postgres -c "DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'test') THEN CREATE USER test WITH PASSWORD 'test' LOGIN; END IF; END $$;"
-          psql postgres -c "DROP DATABASE IF EXISTS testdb;"
+          psql postgres -c "CREATE USER test WITH PASSWORD 'test' LOGIN;"
           psql postgres -c "CREATE DATABASE testdb OWNER test;"
 
           # On Postgres 15+, non-owners cannot CREATE in schema public by default
