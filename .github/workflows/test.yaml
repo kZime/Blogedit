@@ -57,22 +57,37 @@ jobs:
   test-macos:
     runs-on: macos-latest
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: testdb
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U test -d testdb"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+    # services:
+    #   postgres:
+    #     image: postgres:15
+    #     env:
+    #       POSTGRES_USER: test
+    #       POSTGRES_PASSWORD: test
+    #       POSTGRES_DB: testdb
+    #     ports:
+    #       - 5432:5432
+    #     options: >-
+    #       --health-cmd="pg_isready -U test -d testdb"
+    #       --health-interval=10s
+    #       --health-timeout=5s
+    #       --health-retries=5
 
     steps:
+      # Step 0: Install and setup PostgreSQL
+      - name: Install and setup PostgreSQL
+        run: |
+          brew install postgresql@15
+          brew services start postgresql@15
+
+          # Wait for PostgreSQL to be ready
+          sleep 10
+
+          # Create test database and user
+          createdb testdb
+          psql -d testdb -c "CREATE USER test WITH PASSWORD 'test';"
+          psql -d testdb -c "GRANT ALL PRIVILEGES ON DATABASE testdb TO test;"
+          psql -d testdb -c "ALTER USER test CREATEDB;"
+
       # Step 1: Checkout the code
       - name: Checkout code
         uses: actions/checkout@v3
