@@ -103,11 +103,19 @@ func Login(c *gin.Context) {
 
 	atClaims := jwt.MapClaims{"sub": user.ID, "exp": time.Now().Add(accessTokenTTL).Unix()}
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
-	accessToken, _ := at.SignedString(jwtKey)
+	accessToken, err := at.SignedString(jwtKey)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "sign access token error"})
+		return
+	}
 
 	rtClaims := jwt.MapClaims{"sub": user.ID, "exp": time.Now().Add(refreshTokenTTL).Unix()}
 	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
-	refreshToken, _ := rt.SignedString(jwtKey)
+	refreshToken, err := rt.SignedString(jwtKey)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "sign refresh token error"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"access_token":  accessToken,
@@ -134,23 +142,43 @@ func Refresh(c *gin.Context) {
 	var jwtKey = []byte(os.Getenv("JWT_SECRET"))
 
 	token, err := jwt.Parse(req.RefreshToken, func(t *jwt.Token) (interface{}, error) {
+		if t.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+		}
 		return jwtKey, nil
 	})
 	if err != nil || !token.Valid {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid refresh token"})
 		return
 	}
-	claims := token.Claims.(jwt.MapClaims)
-	userID := uint(claims["sub"].(float64))
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token claims"})
+		return
+	}
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid sub claim"})
+		return
+	}
+	userID := uint(sub)
 
 	// 2. sign new token
 	atClaims := jwt.MapClaims{"sub": userID, "exp": time.Now().Add(accessTokenTTL).Unix()}
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
-	newAccessToken, _ := at.SignedString(jwtKey)
+	newAccessToken, err := at.SignedString(jwtKey)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "sign access token error"})
+		return
+	}
 
 	rtClaims := jwt.MapClaims{"sub": userID, "exp": time.Now().Add(refreshTokenTTL).Unix()}
 	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
-	newRefreshToken, _ := rt.SignedString(jwtKey)
+	newRefreshToken, err := rt.SignedString(jwtKey)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "sign refresh token error"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"access_token":  newAccessToken,
