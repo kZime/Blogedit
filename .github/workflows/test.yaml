@@ -82,8 +82,12 @@ jobs:
           # Wait for PostgreSQL to be ready
           sleep 10
 
-          # Create test database and user
-          createdb testdb
+          # Find PostgreSQL installation path and create test database and user
+          PG_PATH=$(brew --prefix postgresql@15)
+          export PATH="$PG_PATH/bin:$PATH"
+
+          # Create test database and user using psql
+          psql postgres -c "CREATE DATABASE testdb;"
           psql -d testdb -c "CREATE USER test WITH PASSWORD 'test';"
           psql -d testdb -c "GRANT ALL PRIVILEGES ON DATABASE testdb TO test;"
           psql -d testdb -c "ALTER USER test CREATEDB;"
