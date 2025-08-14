@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = async (username: string, email: string, password: string) => {
     await api.post('/api/auth/register', { username, email, password });
-    // 注册后可自动登录，或跳到登录页
+    // TODO: auto login after register
   };
 
   const logout = () => {
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     window.location.href = '/login';
   };
 
-  // （可选）检查 token 过期并自动 logout
+  // (optional) check token expiration and auto logout
   useEffect(() => {
     if (accessToken) {
       const { exp } = jwtDecode<{ exp: number }>(accessToken);

@@ -1,0 +1,712 @@
+# sync with api-contract-v1.md
+openapi: 3.0.3
+info:
+  title: Blogedit API
+  version: 1.0.0
+  description: |
+    API Contract – v1
+
+    Status: Stable (v1)
+    Scope: Auth & User (legacy paths) + Notes/Folder Tree/Autosave/XSS
+servers:
+  - url: http://localhost:8080
+    description: Local dev
+  - url: /
+    description: Relative (proxy/reverse-proxy)
+
+tags:
+  - name: Auth
+    description: Authentication endpoints (legacy paths)
+  - name: User
+    description: Current user info (legacy path)
+  - name: Notes
+  - name: Folders
+  - name: Tree
+
+paths:
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      operationId: authRegister
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+            example:
+              username: alice
+              email: a@ex.com
+              password: secret123
+      responses:
+        "200":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+              example:
+                id: 1
+                username: alice
+                email: a@ex.com
+                created_at: "2025-08-04T10:00:00Z"
+        "409":
+          description: Email or username already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: VALIDATION_ERROR
+                message: email already registered
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      operationId: authLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+            example:
+              email: a@ex.com
+              password: secret123
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokens"
+              example:
+                access_token: "<jwt>"
+                refresh_token: "<jwt>"
+                expires_in: 3600
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: UNAUTHORIZED
+                message: invalid credentials
+
+  /api/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh tokens
+      operationId: authRefresh
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+            example:
+              refresh_token: "<jwt>"
+      responses:
+        "200":
+          description: Refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokens"
+              example:
+                access_token: "<jwt>"
+                refresh_token: "<jwt>"
+                expires_in: 3600
+        "401":
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: UNAUTHORIZED
+                message: invalid refresh token
+
+  /api/user:
+    get:
+      tags: [User]
+      summary: Get current user
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+              example:
+                id: 1
+                username: alice
+                email: a@ex.com
+                created_at: "2025-08-04T10:00:00Z"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/v1/notes:
+    get:
+      tags: [Notes]
+      summary: List notes
+      operationId: listNotes
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: folder_id
+          schema: { type: integer, format: int64, nullable: true }
+        - in: query
+          name: q
+          schema: { type: string }
+          description: Fuzzy search in title and content
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [published, draft, all]
+            default: all
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50, maximum: 200 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0, minimum: 0 }
+      responses:
+        "200":
+          description: Notes page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotesPage"
+              example:
+                items:
+                  - $ref: "#/components/examples/NoteDTOExample"
+                total: 123
+                limit: 50
+                offset: 0
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    post:
+      tags: [Notes]
+      summary: Create note
+      operationId: createNote
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateNoteRequest"
+            example:
+              title: Untitled
+              folder_id: 3
+              content_md: "# New note"
+              slug: new-note
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "409":
+          description: Slug conflict within the same user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: VALIDATION_ERROR
+                message: slug already exists
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/v1/notes/{id}:
+    get:
+      tags: [Notes]
+      summary: Get note by id
+      operationId: getNote
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: Note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "403":
+          description: Forbidden (not your resource)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    patch:
+      tags: [Notes]
+      summary: Update note (autosave & optimistic concurrency)
+      operationId: updateNote
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNoteRequest"
+            example:
+              title: New title
+              folder_id: 5
+              content_md: "# Edited ..."
+              is_published: false
+              visibility: private
+              slug: new-slug
+              updated_at: "2025-08-13T21:31:12Z"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "409":
+          description: Version conflict (`updated_at` mismatch)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionConflictError"
+              example:
+                error: VERSION_CONFLICT
+                message: note has been modified by another client
+                server_updated_at: "2025-08-13T21:35:40Z"
+                server_snapshot:
+                  $ref: "#/components/examples/NoteDTOExample"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    delete:
+      tags: [Notes]
+      summary: Delete note
+      operationId: deleteNote
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/v1/folders:
+    post:
+      tags: [Folders]
+      summary: Create folder
+      operationId: createFolder
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFolderRequest"
+            example:
+              name: Drafts
+              parent_id: null
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Folder"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/v1/folders/{id}:
+    patch:
+      tags: [Folders]
+      summary: Update folder
+      operationId: updateFolder
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFolderRequest"
+            example:
+              name: New Name
+              parent_id: null
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Folder"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    delete:
+      tags: [Folders]
+      summary: Delete folder
+      operationId: deleteFolder
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "204":
+          description: Deleted (empty folder)
+        "400":
+          description: Non-empty folder cannot be deleted (minimal behavior for this sprint)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: VALIDATION_ERROR
+                message: folder is not empty
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/v1/tree/reorder:
+    post:
+      tags: [Tree]
+      summary: Reorder folders/notes (drag-and-drop)
+      operationId: reorderTree
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderRequest"
+            example:
+              folders:
+                - { id: 10, sort_order: 0 }
+                - { id: 11, sort_order: 1 }
+              notes:
+                - { id: 12, sort_order: 0, folder_id: 10 }
+                - { id: 13, sort_order: 1, folder_id: 10 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+              example:
+                ok: true
+        "400":
+          description: Invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: VALIDATION_ERROR
+                message: invalid payload
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # Common / Auth / User
+    RegisterRequest:
+      type: object
+      required: [username, email, password]
+      properties:
+        username: { type: string, minLength: 1 }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 6 }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+
+    AuthTokens:
+      type: object
+      required: [access_token, refresh_token, expires_in]
+      properties:
+        access_token: { type: string }
+        refresh_token: { type: string }
+        expires_in: { type: integer, example: 3600 }
+
+    User:
+      type: object
+      required: [id, username, email, created_at]
+      properties:
+        id: { type: integer, format: int64 }
+        username: { type: string }
+        email: { type: string, format: email }
+        created_at: { type: string, format: date-time }
+
+    # Notes / Folders
+    Note:
+      type: object
+      required:
+        - id
+        - user_id
+        - title
+        - content_md
+        - content_html
+        - is_published
+        - visibility
+        - sort_order
+        - created_at
+        - updated_at
+      properties:
+        id: { type: integer, format: int64 }
+        user_id: { type: integer, format: int64 }
+        folder_id: { type: integer, format: int64, nullable: true }
+        title: { type: string }
+        slug: { type: string, nullable: true }
+        content_md: { type: string }
+        content_html: { type: string }
+        is_published: { type: boolean }
+        visibility:
+          type: string
+          enum: [private, unlisted, public]
+          default: private
+        sort_order: { type: integer, default: 0 }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CreateNoteRequest:
+      type: object
+      properties:
+        title: { type: string }
+        folder_id: { type: integer, format: int64, nullable: true }
+        content_md: { type: string }
+        slug: { type: string, nullable: true }
+
+    UpdateNoteRequest:
+      type: object
+      properties:
+        title: { type: string }
+        folder_id: { type: integer, format: int64, nullable: true }
+        content_md: { type: string }
+        is_published: { type: boolean }
+        visibility:
+          type: string
+          enum: [private, unlisted, public]
+        slug: { type: string, nullable: true }
+        updated_at:
+          {
+            type: string,
+            format: date-time,
+            description: "Required for optimistic concurrency",
+          }
+
+    NotesPage:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Note"
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
+
+    Folder:
+      type: object
+      required: [id, user_id, name, sort_order, created_at, updated_at]
+      properties:
+        id: { type: integer, format: int64 }
+        user_id: { type: integer, format: int64 }
+        name: { type: string }
+        parent_id: { type: integer, format: int64, nullable: true }
+        sort_order: { type: integer, default: 0 }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CreateFolderRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        parent_id: { type: integer, format: int64, nullable: true }
+
+    UpdateFolderRequest:
+      type: object
+      properties:
+        name: { type: string }
+        parent_id: { type: integer, format: int64, nullable: true }
+
+    ReorderRequest:
+      type: object
+      properties:
+        folders:
+          type: array
+          items:
+            type: object
+            required: [id, sort_order]
+            properties:
+              id: { type: integer, format: int64 }
+              sort_order: { type: integer }
+        notes:
+          type: array
+          items:
+            type: object
+            required: [id, sort_order]
+            properties:
+              id: { type: integer, format: int64 }
+              sort_order: { type: integer }
+              folder_id: { type: integer, format: int64, nullable: true }
+
+    NoteRevision:
+      type: object
+      required: [id, note_id, content_md, created_at]
+      properties:
+        id: { type: integer, format: int64 }
+        note_id: { type: integer, format: int64 }
+        content_md: { type: string }
+        diff: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    Error:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+          enum:
+            - UNAUTHORIZED
+            - FORBIDDEN
+            - NOT_FOUND
+            - VALIDATION_ERROR
+            - VERSION_CONFLICT
+            - RATE_LIMITED
+            - INTERNAL
+        message: { type: string }
+        details:
+          type: object
+          additionalProperties: true
+
+    VersionConflictError:
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          required: [server_updated_at, server_snapshot]
+          properties:
+            server_updated_at: { type: string, format: date-time }
+            server_snapshot:
+              $ref: "#/components/schemas/Note"
+
+  examples:
+    NoteDTOExample:
+      summary: Example NoteDTO
+      value:
+        id: 12
+        user_id: 1
+        folder_id: 3
+        title: My First Note
+        slug: my-first-note
+        content_md: "# Hello"
+        content_html: "<h1>Hello</h1>"
+        is_published: false
+        visibility: private
+        sort_order: 0
+        created_at: "2025-08-13T21:30:00Z"
+        updated_at: "2025-08-13T21:31:12Z"

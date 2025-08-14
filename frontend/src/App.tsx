@@ -4,7 +4,6 @@ import { useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Editor from './pages/Editor';
-
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { accessToken } = useAuth();
   return accessToken ? <>{children}</> : <Navigate to="/login" replace />;
@@ -25,5 +24,6 @@ export default function App() {
       />
       <Route path="*" element={<Navigate to="/editor" replace />} />
     </Routes>
+    
   );
 }

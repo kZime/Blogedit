@@ -1,62 +1,90 @@
-import axios from 'axios';
-import { getAccessToken, setAccessToken, getRefreshToken } from '../contexts/AuthContext';
+// src/api/axios.ts
+import axios from 'axios'
+import { getAccessToken, setAccessToken, getRefreshToken } from '../contexts/AuthContext'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
-});
+  // TODO: use env variable
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/',
+})
 
-// 请求：自动附带 access token
-api.interceptors.request.use(config => {
-  const token = getAccessToken();
-  if (token) config.headers!['Authorization'] = `Bearer ${token}`;
-  return config;
-});
+const isAuthPath = (url?: string) =>
+  !!url && /^\/?api\/(v1\/)?auth\//.test(url)
 
-// 响应：遇到 401，尝试刷新 token 并重发一次
-let isRefreshing = false;
-let subscribers: ((token: string) => void)[] = [];
+api.interceptors.request.use((config) => {
+  const t = getAccessToken()
+  if (t) {
+    config.headers = { ...config.headers, Authorization: `Bearer ${t}` }
+  }
+  return config
+})
+
+// ===== 401 refresh: skip auth path; no refresh_token; no hard redirect =====
+let isRefreshing = false
+let subscribers: Array<(token: string) => void> = []
 
 function onRefreshed(token: string) {
-  subscribers.forEach(cb => cb(token));
-  subscribers = [];
+  subscribers.forEach((cb) => cb(token))
+  subscribers = []
 }
 
 api.interceptors.response.use(
-  res => res,
-  async err => {
-    const status = err.response?.status;
-    const config = err.config;
-    if (status === 401 && !config._retry) {
-      if (isRefreshing === false) {
-        isRefreshing = true;
-        try {
-          const { data } = await axios.post(
-            '/api/auth/refresh',
-            { refresh_token: getRefreshToken() },
-            { baseURL: api.defaults.baseURL }
-          );
-          setAccessToken(data.access_token);
-          localStorage.setItem('refreshToken', data.refresh_token);
-          onRefreshed(data.access_token);
-        } catch (e) {
-          // 刷新失败，跳转登录
-          window.location.href = '/login';
-          return Promise.reject(e);
-        } finally {
-          isRefreshing = false;
-        }
-      }
-      // 将当前请求挂起，等刷新完成后再重发
-      return new Promise(resolve => {
-        subscribers.push((token: string) => {
-          config.headers!['Authorization'] = `Bearer ${token}`;
-          config._retry = true;
-          resolve(api(config));
-        });
-      });
-    }
-    return Promise.reject(err);
-  }
-);
+  (res) => res,
+  async (err) => {
+    const status = err?.response?.status
+    const config = err?.config || {}
 
-export default api;
+    // not 401 or already retried: pass to upper layer
+    if (status !== 401 || config._retry) return Promise.reject(err)
+
+    // auth routes: no auto refresh, pass to upper layer (show error, stay on login page)
+    if (isAuthPath(config.url)) {
+      // console.log('[axios] 401 on auth endpoint -> skip refresh')
+      return Promise.reject(err)
+    }
+
+    // non-auth request: try refresh, but must have refresh_token
+    const rt = getRefreshToken()
+    if (!rt) {
+      // console.log('[axios] 401 w/o refreshToken -> skip refresh, clear tokens')
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
+      return Promise.reject(err)
+    }
+
+    if (!isRefreshing) {
+      isRefreshing = true
+      try {
+        const { data } = await axios.post(
+          '/api/auth/refresh',
+          { refresh_token: rt },
+          { baseURL: api.defaults.baseURL }
+        )
+        if (!data?.access_token) throw new Error('bad refresh response')
+
+        setAccessToken(data.access_token)
+        if (data.refresh_token) {
+          localStorage.setItem('refreshToken', data.refresh_token)
+        }
+        onRefreshed(data.access_token)
+      } catch (e) {
+        // refresh failed: clear token, pass to upper layer (PrivateRoute will take you back to /login)
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('refreshToken')
+        return Promise.reject(e)
+      } finally {
+        isRefreshing = false
+      }
+    }
+
+    // suspend current request, retry after refresh
+    return new Promise((resolve) => {
+      subscribers.push((newToken: string) => {
+        config.headers = { ...config.headers, Authorization: `Bearer ${newToken}` }
+        config._retry = true
+        resolve(api(config))
+      })
+    })
+  }
+)
+
+export default api

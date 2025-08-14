@@ -17,16 +17,16 @@ export default function Login() {
     } catch (e: unknown) {
       if (typeof e === 'object' && e !== null && 'response' in e) {
         // @ts-expect-error: e.response may exist on error objects from axios
-        setErr(e.response?.data?.error || '登录失败');
+        setErr(e.response?.data?.error || 'LOGIN FAILED');
       } else {
-        setErr('登录失败');
+        setErr('LOGIN FAILED');
       }
     }
   };
 
   return (
     <form onSubmit={onSubmit} className="max-w-sm mx-auto p-4">
-      <h2 className="text-xl mb-4">登录</h2>
+      <h2 className="text-xl mb-4">LOGIN</h2>
       {err && <div className="text-red-500 mb-2">{err}</div>}
       <input
         type="email"
@@ -43,10 +43,10 @@ export default function Login() {
         className="w-full mb-4 p-2 border rounded"
       />
       <button type="submit" className="w-full p-2 bg-blue-500 text-white rounded">
-        登录
+        LOGIN
       </button>
       <p className="mt-2 text-sm">
-        还没账号？<Link to="/register" className="text-blue-400">注册</Link>
+        No account? <Link to="/register" className="text-blue-400">REGISTER</Link>
       </p>
     </form>
   );

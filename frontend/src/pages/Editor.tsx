@@ -3,6 +3,8 @@
 import React, { useState, Suspense } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
+import DebugDock from '../components/DebugDock';
+
 const CodeMirror = SuspenseFor(
   () => import('@uiw/react-codemirror'), 
   { fallback: <div>Loading editor…</div> }
@@ -34,11 +36,12 @@ export default function Editor() {
           <ReactMarkdown>{text}</ReactMarkdown>
         </Suspense>
       </div>
+      <DebugDock />
     </div>
   );
 }
 
-// 辅助：把懒加载封装为组件
+// helper: wrap lazy loading with component
 function SuspenseFor<T extends {}>(
   importer: () => Promise<{ default: React.ComponentType<T> }>,
   options: { fallback: React.ReactNode }

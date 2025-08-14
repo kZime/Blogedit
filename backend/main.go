@@ -11,17 +11,18 @@ import (
 
 func main() {
 
+	// Load .env file
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
-	// init database
+	// Init database
 	if err := database.Init(); err != nil {
 		log.Fatalf("failed to initialize the database: %v", err)
 	}
 
-	// init router
+	// Init router
 	r := router.Setup()
 	r.Run(":8080")
 

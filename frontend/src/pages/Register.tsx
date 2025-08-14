@@ -18,16 +18,16 @@ export default function Register() {
     } catch (e: unknown) {
       if (typeof e === 'object' && e !== null && 'response' in e) {
         const error = e as { response?: { data?: { error?: string } } };
-        setErr(error.response?.data?.error || '注册失败');
+        setErr(error.response?.data?.error || 'REGISTER FAILED');
       } else {
-        setErr('注册失败');
+        setErr('REGISTER FAILED');
       }
     }
   };
 
   return (
     <form onSubmit={onSubmit} className="max-w-sm mx-auto p-4">
-      <h2 className="text-xl mb-4">注册</h2>
+      <h2 className="text-xl mb-4">REGISTER</h2>
       {err && <div className="text-red-500 mb-2">{err}</div>}
       <input
         placeholder="用户名"
@@ -50,10 +50,10 @@ export default function Register() {
         className="w-full mb-4 p-2 border rounded"
       />
       <button type="submit" className="w-full p-2 bg-green-500 text-white rounded">
-        注册
+        REGISTER
       </button>
       <p className="mt-2 text-sm">
-        已有账号？<Link to="/login" className="text-blue-400">登录</Link>
+        Already have an account? <Link to="/login" className="text-blue-400">LOGIN</Link>
       </p>
     </form>
   );
