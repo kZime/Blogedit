@@ -1,55 +1,69 @@
-/* eslint-disable @typescript-eslint/no-empty-object-type */
 // src/pages/Editor.tsx
-import React, { useState, Suspense } from 'react';
+import React, { useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-
-import DebugDock from '../components/DebugDock';
-
-const CodeMirror = SuspenseFor(
-  () => import('@uiw/react-codemirror'), 
-  { fallback: <div>Loading editor…</div> }
-);
-const ReactMarkdown = SuspenseFor(
-  () => import('react-markdown'), 
-  { fallback: <div>Loading preview…</div> }
-);
+import '@mdxeditor/editor/style.css';
+import {
+  MDXEditor,
+  type MDXEditorMethods,
+  toolbarPlugin,
+  headingsPlugin,
+  listsPlugin,
+  linkPlugin,
+  quotePlugin,
+  codeBlockPlugin,
+  markdownShortcutPlugin,
+  // toolbar items
+  BoldItalicUnderlineToggles,
+  BlockTypeSelect,
+  ListsToggle,
+  CreateLink,
+  CodeToggle,
+  UndoRedo,
+  Separator
+} from '@mdxeditor/editor';
 
 export default function Editor() {
-  const [text, setText] = useState('# Hello Markdown');
   const { logout } = useAuth();
+  const editorRef = useRef<MDXEditorMethods>(null);
+  const [md, setMd] = useState('# Hello MDXEditor'); // 仅用于保存/调试
+
 
   return (
-    <div className="h-screen grid grid-cols-2">
-      <div className="p-4">
-        <button onClick={logout} className="mb-4 text-red-500">退出</button>
-        <Suspense fallback={<div>Loading editor…</div>}>
-          <CodeMirror
-            value={text}
-            height="90%"
-            extensions={[]}
-            onChange={(v: string) => setText(v)}
-          />
-        </Suspense>
+    <div className="h-screen flex flex-col">
+      <div className="p-3 border-b flex items-center gap-2">
+        <button onClick={logout} className="text-red-500">退出</button>
       </div>
-      <div className="p-4 overflow-auto bg-gray-50">
-        <Suspense fallback={<div>Loading preview…</div>}>
-          <ReactMarkdown>{text}</ReactMarkdown>
-        </Suspense>
-      </div>
-      <DebugDock />
-    </div>
-  );
-}
 
-// helper: wrap lazy loading with component
-function SuspenseFor<T extends {}>(
-  importer: () => Promise<{ default: React.ComponentType<T> }>,
-  options: { fallback: React.ReactNode }
-) {
-  const Component = React.lazy(importer);
-  return (props: T) => (
-    <Suspense fallback={options.fallback}>
-      <Component {...props} />
-    </Suspense>
+      <div className="flex-1 overflow-auto p-4 bg-gray-50">
+        <MDXEditor
+          contentEditableClassName="prose"
+
+          ref={editorRef}
+          markdown={md}                 // 初始值：只用来“开机一次”
+          onChange={setMd}              // 实时拿到用户输入（保存用）
+          className="bg-white rounded-xl p-4 min-h-[70vh]"
+          plugins={[
+            toolbarPlugin({
+              toolbarContents: () => (
+                <>
+                  <UndoRedo /><Separator />
+                  <BlockTypeSelect /><Separator />
+                  <BoldItalicUnderlineToggles /><Separator />
+                  <ListsToggle /><Separator />
+                  <CreateLink /><Separator />
+                  <CodeToggle />
+                </>
+              )
+            }),
+            headingsPlugin(),
+            listsPlugin(),
+            linkPlugin(),
+            quotePlugin(),
+            codeBlockPlugin(),
+            markdownShortcutPlugin(),   // must be the last plugin
+          ]}
+        />
+      </div>
+    </div>
   );
 }
