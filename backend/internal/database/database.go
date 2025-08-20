@@ -12,7 +12,7 @@ import (
 
 var DB *gorm.DB
 
-// Init: initialize the database connection and auto migrate the user model
+// Init: initialize the database connection and auto migrate all models
 func Init() error {
 
 	// use environment variable to configure DSN
@@ -27,9 +27,14 @@ func Init() error {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	// Auto migrate the user model
-	if err := db.AutoMigrate(&model.User{}); err != nil {
-		return fmt.Errorf("failed to auto migrate the user model: %w", err)
+	// Auto migrate all models in dependency order
+	if err := db.AutoMigrate(
+		&model.User{},        // 1. 用户表（被其他表依赖）
+		&model.Folder{},      // 2. 文件夹表（依赖用户表）
+		&model.Note{},        // 3. 笔记表（依赖用户表和文件夹表）
+		&model.NoteRevision{}, // 4. 笔记版本表（依赖笔记表）
+	); err != nil {
+		return fmt.Errorf("failed to auto migrate models: %w", err)
 	}
 
 	DB = db
