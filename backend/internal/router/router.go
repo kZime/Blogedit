@@ -30,12 +30,12 @@ func Setup() *gin.Engine {
 		auth.POST("/refresh", handler.Refresh)
 	}
 
-	v1 := r.Group("/api/v1")
-	{
-		notes := v1.Group("/notes")
-		folders := v1.Group("/folders")
-		tree := v1.Group("/tree")
-	}
+	// v1 := r.Group("/api/v1")
+	// {
+	// 	notes := v1.Group("/notes")
+	// 	folders := v1.Group("/folders")
+	// 	tree := v1.Group("/tree")
+	// }
 
 	r.GET("/api/user", middleware.JWTMiddleware(), handler.GetCurrentUser)
 
