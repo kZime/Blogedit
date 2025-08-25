@@ -4,13 +4,16 @@ package handler
 import (
 	"backend/internal/database"
 	"backend/internal/model"
+	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // ------------------------------------------------------------
@@ -29,8 +32,26 @@ func ListNotes(c *gin.Context) {
 	folderID := c.Query("folder_id")
 	searchQuery := c.Query("q")
 	status := c.Query("status")
-	limit := c.Query("limit")
-	offset := c.Query("offset")
+	limitStr := c.DefaultQuery("limit", "50")
+	offsetStr := c.DefaultQuery("offset", "0")
+
+	// Convert limit and offset to integers
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		limit = 50 // default value
+	}
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		offset = 0 // default value
+	}
+
+	// Validate limit
+	if limit > 200 {
+		limit = 200
+	}
+	if limit < 1 {
+		limit = 50
+	}
 
 	// Get user ID from JWT token
 	userID, exists := c.Get("userID")
@@ -52,9 +73,17 @@ func ListNotes(c *gin.Context) {
 		query = query.Where("title LIKE ? OR content_md LIKE ?", "%"+searchQuery+"%", "%"+searchQuery+"%")
 	}
 	
-	if status != "" {
-		query = query.Where("is_published = ?", status == "published")
+	if status != "" && status != "all" {
+		if status == "published" {
+			query = query.Where("is_published = ?", true)
+		} else if status == "draft" {
+			query = query.Where("is_published = ?", false)
+		}
 	}
+
+	// Get total count
+	var total int64
+	query.Model(&model.Note{}).Count(&total)
 
 	// Apply pagination
 	query = query.Order("created_at DESC").Limit(limit).Offset(offset)
@@ -71,12 +100,11 @@ func ListNotes(c *gin.Context) {
 
 	// Return the notes
 	c.JSON(http.StatusOK, gin.H{
-		"items": notes,
-		"total": len(notes),
-		"limit": limit,
+		"items":  notes,
+		"total":  total,
+		"limit":  limit,
 		"offset": offset,
 	})
-
 }
 
 
@@ -295,7 +323,7 @@ func convertMarkdownToHTML(markdown string) string {
 
 func GetNote(c *gin.Context) {
 	// Get note ID from path
-	idStr := c.Param('id')
+	idStr := c.Param("id")
 
 	// Validate ID is a number
 	idInt, err := strconv.ParseInt(idStr, 10, 32)
@@ -306,7 +334,7 @@ func GetNote(c *gin.Context) {
 		})
 		return
 	}
-	id := uint(idInt)
+	noteID := uint(idInt)
 	
 	// Get user ID from JWT token
 	userID, exists := c.Get("userID")
@@ -320,7 +348,7 @@ func GetNote(c *gin.Context) {
 
 	// Search for note
 	var note model.Note
-	if err := database.DB.Where("id = ? AND user_id = ?", idInt, userID).First(&note).Error; err != nil {
+	if err := database.DB.Where("id = ? AND user_id = ?", noteID, userID).First(&note).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error":   "NOT_FOUND",
@@ -336,7 +364,7 @@ func GetNote(c *gin.Context) {
 	}
 
 	// Return the note
-	c.JSON(http.StatusOK, gin.H{
+	response := gin.H{
 		"id":           note.ID,
 		"user_id":      note.UserID,
 		"title":        note.Title,
@@ -348,7 +376,16 @@ func GetNote(c *gin.Context) {
 		"sort_order":   note.SortOrder,
 		"created_at":   note.CreatedAt.Format(time.RFC3339),
 		"updated_at":   note.UpdatedAt.Format(time.RFC3339),
-	})
+	}
+
+	// Handle nullable folder_id
+	if note.FolderID != nil {
+		response["folder_id"] = *note.FolderID
+	} else {
+		response["folder_id"] = nil
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // ------------------------------------------------------------
@@ -364,17 +401,17 @@ func GetNote(c *gin.Context) {
 // ------------------------------------------------------------
 
 type updateNoteRequest struct {
-	Title        string `json:"title;notnull"`
-	FolderID     *uint  `json:"folder_id"`
-	ContentMd    string `json:"content_md;notnull"`
-	IsPublished  bool   `json:"is_published"`
-	Visibility   string `json:"visibility;notnull"`
-	UpdatedAt    string `json:"updated_at"`
+	Title       *string `json:"title"`
+	FolderID    *uint   `json:"folder_id"`
+	ContentMd   *string `json:"content_md"`
+	IsPublished *bool   `json:"is_published"`
+	Visibility  *string `json:"visibility"`
+	UpdatedAt   string  `json:"updated_at"`
 }
 
 func UpdateNote(c *gin.Context) {
 	// Get note ID from path
-	idStr := c.Param('id')
+	idStr := c.Param("id")
 
 	// Validate ID is a number
 	idInt, err := strconv.ParseInt(idStr, 10, 32)
@@ -383,7 +420,9 @@ func UpdateNote(c *gin.Context) {
 			"error":   "VALIDATION_ERROR",
 			"message": "invalid note ID",
 		})
+		return
 	}
+	noteID := uint(idInt)
 
 	// Get user ID from JWT token
 	userID, exists := c.Get("userID")
@@ -392,63 +431,141 @@ func UpdateNote(c *gin.Context) {
 			"error":   "UNAUTHORIZED",
 			"message": "invalid user ID",
 		})
+		return
+	}
+
+	// Parse request body
+	var req updateNoteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "VALIDATION_ERROR",
+			"message": err.Error(),
+		})
+		return
 	}
 
 	// Get note
 	var note model.Note
-	if err := database.DB.Where("id = ? AND user_id = ?", idInt, userID).First(&note).Error; err != nil {
+	if err := database.DB.Where("id = ? AND user_id = ?", noteID, userID).First(&note).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error":   "NOT_FOUND",
 				"message": "note not found",
 			})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   "INTERNAL",
+				"message": "Failed to get note",
+			})
+		}
+		return
+	}
+
+	// Check optimistic concurrency
+	if req.UpdatedAt != "" {
+		expectedTime, err := time.Parse(time.RFC3339, req.UpdatedAt)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   "VALIDATION_ERROR",
+				"message": "invalid updated_at format",
+			})
+			return
+		}
+		
+		if !note.UpdatedAt.Equal(expectedTime) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error":   "VERSION_CONFLICT",
+				"message": "note has been modified by another client",
+				"server_updated_at": note.UpdatedAt.Format(time.RFC3339),
+				"server_snapshot": gin.H{
+					"id":           note.ID,
+					"user_id":      note.UserID,
+					"folder_id":    note.FolderID,
+					"title":        note.Title,
+					"slug":         note.Slug,
+					"content_md":   note.ContentMd,
+					"content_html": note.ContentHtml,
+					"is_published": note.IsPublished,
+					"visibility":   note.Visibility,
+					"sort_order":   note.SortOrder,
+					"created_at":   note.CreatedAt.Format(time.RFC3339),
+					"updated_at":   note.UpdatedAt.Format(time.RFC3339),
+				},
+			})
+			return
 		}
 	}
 
 	// Update note fields
-	if req.Title != "" {
-		note.Title = req.Title
-		note.Slug = generateSlug(req.Title)
-	}
-	if req.FolderID != nil {
-		note.FolderID = req.FolderID
-	}
-	if req.ContentMd != "" {
-		note.ContentMd = req.ContentMd
-	}
-	if req.IsPublished != nil {
-		note.IsPublished = req.IsPublished
-	}
-	if req.Visibility != "" {
-		note.Visibility = req.Visibility
+	hasChanges := false
+	
+	if req.Title != nil {
+		note.Title = *req.Title
+		note.Slug = generateSlug(*req.Title)
+		hasChanges = true
 	}
 	
-	// updated_at?
-	if req.UpdatedAt == note.UpdatedAt {
-		note.UpdatedAt = time.Now()
-	} else {
-		c.JSON(http.StatusConflict, gin.H{
-			"error":   "VERSION_CONFLICT",
-			"message": "note has been modified by another client",
-			"server_updated_at": note.UpdatedAt.Format(time.RFC3339),
-			"server_snapshot": gin.H{
-				"id": note.ID,
-			},
-		})
+	if req.FolderID != nil {
+		note.FolderID = req.FolderID
+		hasChanges = true
+	}
+	
+	if req.ContentMd != nil && *req.ContentMd != note.ContentMd {
+		note.ContentMd = *req.ContentMd
+		note.ContentHtml = convertMarkdownToHTML(*req.ContentMd)
+		hasChanges = true
+	}
+	
+	if req.IsPublished != nil {
+		note.IsPublished = *req.IsPublished
+		hasChanges = true
+	}
+	
+	if req.Visibility != nil {
+		note.Visibility = *req.Visibility
+		hasChanges = true
+	}
+
+	// If no changes, return current note (idempotent)
+	if !hasChanges {
+		response := gin.H{
+			"id":           note.ID,
+			"user_id":      note.UserID,
+			"title":        note.Title,
+			"slug":         note.Slug,
+			"content_md":   note.ContentMd,
+			"content_html": note.ContentHtml,
+			"is_published": note.IsPublished,
+			"visibility":   note.Visibility,
+			"sort_order":   note.SortOrder,
+			"created_at":   note.CreatedAt.Format(time.RFC3339),
+			"updated_at":   note.UpdatedAt.Format(time.RFC3339),
+		}
+		
+		if note.FolderID != nil {
+			response["folder_id"] = *note.FolderID
+		} else {
+			response["folder_id"] = nil
+		}
+		
+		c.JSON(http.StatusOK, response)
 		return
 	}
 
+	// Update timestamp
+	note.UpdatedAt = time.Now()
 
-	// Save changes
+	// Save to database
 	if err := database.DB.Save(&note).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "INTERNAL",
 			"message": "Failed to update note",
 		})
+		return
 	}
 
-	// Return the updated note
-	response := gin.H {
+	// Return updated note
+	response := gin.H{
 		"id":           note.ID,
 		"user_id":      note.UserID,
 		"title":        note.Title,
@@ -456,15 +573,18 @@ func UpdateNote(c *gin.Context) {
 		"content_md":   note.ContentMd,
 		"content_html": note.ContentHtml,
 		"is_published": note.IsPublished,
+		"visibility":   note.Visibility,
+		"sort_order":   note.SortOrder,
+		"created_at":   note.CreatedAt.Format(time.RFC3339),
+		"updated_at":   note.UpdatedAt.Format(time.RFC3339),
 	}
-
-	// Handle nullable folder_id
+	
 	if note.FolderID != nil {
 		response["folder_id"] = *note.FolderID
 	} else {
 		response["folder_id"] = nil
 	}
-
+	
 	c.JSON(http.StatusOK, response)
 }
 
@@ -475,7 +595,7 @@ func UpdateNote(c *gin.Context) {
 
 func DeleteNote(c *gin.Context) {
 	// Get note ID from path
-	idStr := c.Param('id')
+	idStr := c.Param("id")
 
 	// Validate ID is a number
 	idInt, err := strconv.ParseInt(idStr, 10, 32)
@@ -484,7 +604,9 @@ func DeleteNote(c *gin.Context) {
 			"error":   "VALIDATION_ERROR",
 			"message": "invalid note ID",
 		})
+		return
 	}
+	noteID := uint(idInt)
 
 	// Get user ID from JWT token
 	userID, exists := c.Get("userID")
@@ -493,17 +615,24 @@ func DeleteNote(c *gin.Context) {
 			"error":   "UNAUTHORIZED",
 			"message": "invalid user ID",
 		})
+		return
 	}
 
 	// Get note
 	var note model.Note
-	if err := database.DB.Where("id = ? AND user_id = ?", idInt, userID).First(&note).Error; err != nil {
+	if err := database.DB.Where("id = ? AND user_id = ?", noteID, userID).First(&note).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error":   "NOT_FOUND",
 				"message": "note not found",
 			})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   "INTERNAL",
+				"message": "Failed to get note",
+			})
 		}
+		return
 	}
 
 	// Delete note
@@ -512,8 +641,9 @@ func DeleteNote(c *gin.Context) {
 			"error":   "INTERNAL",
 			"message": "Failed to delete note",
 		})
+		return
 	}
 	
 	// Return success
-	c.JSON(http.StatusNoContent, nil)
+	c.Status(http.StatusNoContent)
 }
