@@ -50,12 +50,12 @@ func (suite *AuthTestSuite) SetupSuite() {
 
 func (suite *AuthTestSuite) TearDownSuite() {
 	// Clean up data in the database
-	database.DB.Exec("DELETE FROM users")
+	database.DB.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
 }
 
 func (suite *AuthTestSuite) SetupTest() {
 	// Clean up before each test to ensure isolation
-	database.DB.Exec("DELETE FROM users")
+	database.DB.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
 	// Reset test state
 	suite.userID = 0
 	suite.accessToken = ""

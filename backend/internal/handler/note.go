@@ -911,3 +911,97 @@ func DeleteFolder(c *gin.Context) {
 	// Return success
 	c.Status(http.StatusNoContent)
 }
+
+// ------------------------------------------------------------
+// Reorder Tree
+// POST /api/v1/tree/reorder
+// Body:
+// - folders: array of objects with id and sort_order
+// - notes: array of objects with id, sort_order, and folder_id
+// ------------------------------------------------------------
+
+type reorderTreeRequest struct {
+	Folders []struct {
+		ID        uint `json:"id"`
+		SortOrder int  `json:"sort_order"`
+	} `json:"folders"`
+	Notes []struct {
+		ID        uint `json:"id"`
+		SortOrder int  `json:"sort_order"`
+		FolderID  *uint `json:"folder_id"`
+	} `json:"notes"`
+}
+
+func ReorderTree(c *gin.Context) {
+	var req reorderTreeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "VALIDATION_ERROR",
+			"message": "invalid payload",
+		})
+		return
+	}
+	
+	// Get user ID from JWT token
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error":   "UNAUTHORIZED",
+			"message": "invalid user ID",
+		})
+		return
+	}
+
+	// Update folders
+	for _, folder := range req.Folders {
+		var f model.Folder
+		if err := database.DB.Where("id = ? AND user_id = ?", folder.ID, userID).First(&f).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				c.JSON(http.StatusNotFound, gin.H{
+					"error":   "NOT_FOUND",
+					"message": "folder not found",
+				})
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error":   "INTERNAL",
+					"message": "Failed to get folder",
+				})
+			}
+			return
+		}
+		f.SortOrder = folder.SortOrder
+		if err := database.DB.Save(&f).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   "INTERNAL",
+				"message": "Failed to update folder",
+			})
+			return
+		}
+	}
+	
+	// Update notes
+	for _, note := range req.Notes {
+		var n model.Note
+		if err := database.DB.Where("id = ? AND user_id = ?", note.ID, userID).First(&n).Error; err != nil {
+						if errors.Is(err, gorm.ErrRecordNotFound) {
+				c.JSON(http.StatusNotFound, gin.H{
+					"error":   "NOT_FOUND",
+					"message": "note not found",
+				})
+				return
+			}
+		}
+		n.SortOrder = note.SortOrder
+		n.FolderID = note.FolderID
+		if err := database.DB.Save(&n).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   "INTERNAL",
+				"message": "Failed to update note",
+			})
+			return
+		}
+	}
+	
+	// Return success
+	c.Status(http.StatusOK)
+}

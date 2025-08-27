@@ -12,7 +12,17 @@ import (
 
 func GetCurrentUser(c *gin.Context) {
 	// ASSUME 'userID' is written into context in JWTMiddleware
-	userID, _ := c.Get("userID")
+	userIDInterface, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	userID, ok := userIDInterface.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user ID format"})
+		return
+	}
 
 	var user model.User
 
