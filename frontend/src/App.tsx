@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Editor from './pages/Editor';
 import PostList from './pages/PostList';
 import PostDetail from './pages/PostDetail';
+
+const Editor = lazy(() => import('./pages/Editor'));
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { accessToken } = useAuth();
@@ -23,7 +24,9 @@ export default function App() {
         path="/editor"
         element={
           <PrivateRoute>
-            <Editor />
+            <Suspense fallback={<div className="p-4">Loading editor…</div>}>
+              <Editor />
+            </Suspense>
           </PrivateRoute>
         }
       />
