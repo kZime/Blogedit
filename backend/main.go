@@ -7,6 +7,7 @@ import (
 
 	"backend/internal/router"
 
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
@@ -27,6 +28,11 @@ func main() {
 	const minJWTSecretLen = 32
 	if secret := os.Getenv("JWT_SECRET"); len(secret) < minJWTSecretLen {
 		log.Fatalf("JWT_SECRET must be at least %d characters", minJWTSecretLen)
+	}
+
+	// Production: set GIN_MODE=release to disable debug and trust only configured proxies
+	if mode := os.Getenv("GIN_MODE"); mode != "" {
+		gin.SetMode(mode)
 	}
 
 	// Init router

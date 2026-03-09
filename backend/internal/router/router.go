@@ -14,6 +14,13 @@ import (
 func Setup() *gin.Engine {
 	r := gin.Default()
 
+	// TrustedProxies: set TRUSTED_PROXIES (e.g. "127.0.0.1") when behind a reverse proxy; default trust none
+	if v := os.Getenv("TRUSTED_PROXIES"); v != "" {
+		r.SetTrustedProxies(strings.Split(strings.TrimSpace(v), ","))
+	} else {
+		r.SetTrustedProxies(nil)
+	}
+
 	origins := os.Getenv("CORS_ORIGINS")
 	if origins == "" {
 		origins = "http://localhost:5173"
