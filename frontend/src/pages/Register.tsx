@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 8;
+
 export default function Register() {
   const { register } = useAuth();
   const nav = useNavigate();
@@ -9,11 +12,37 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [err, setErr] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErr('');
+    const trimmedUsername = username.trim();
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+    if (!trimmedUsername) {
+      setErr('Username is required');
+      return;
+    }
+    if (!trimmedEmail) {
+      setErr('Email is required');
+      return;
+    }
+    if (!EMAIL_RE.test(trimmedEmail)) {
+      setErr('Please enter a valid email address');
+      return;
+    }
+    if (!trimmedPassword) {
+      setErr('Password is required');
+      return;
+    }
+    if (trimmedPassword.length < MIN_PASSWORD_LENGTH) {
+      setErr(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+      return;
+    }
+    setIsSubmitting(true);
     try {
-      await register(username, email, password);
+      await register(trimmedUsername, trimmedEmail, trimmedPassword);
       nav('/editor');
     } catch (e: unknown) {
       if (typeof e === 'object' && e !== null && 'response' in e) {
@@ -22,6 +51,8 @@ export default function Register() {
       } else {
         setErr('REGISTER FAILED');
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -49,8 +80,12 @@ export default function Register() {
         onChange={e => setPassword(e.target.value)}
         className="w-full mb-4 p-2 border rounded"
       />
-      <button type="submit" className="w-full p-2 bg-green-500 text-white rounded">
-        REGISTER
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full p-2 bg-green-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isSubmitting ? 'Creating account…' : 'REGISTER'}
       </button>
       <p className="mt-2 text-sm">
         Already have an account? <Link to="/login" className="text-blue-400">LOGIN</Link>

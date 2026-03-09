@@ -5,17 +5,36 @@ import { useNavigate, Link } from 'react-router-dom';
 // Check if we're in mock mode
 const isMockMode = import.meta.env.DEV && import.meta.env.VITE_USE_MSW === 'true';
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function Login() {
   const { login } = useAuth();
   const nav = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [err, setErr] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErr('');
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+    if (!trimmedEmail) {
+      setErr('Email is required');
+      return;
+    }
+    if (!EMAIL_RE.test(trimmedEmail)) {
+      setErr('Please enter a valid email address');
+      return;
+    }
+    if (!trimmedPassword) {
+      setErr('Password is required');
+      return;
+    }
+    setIsSubmitting(true);
     try {
-      await login(email, password);
+      await login(trimmedEmail, trimmedPassword);
       nav('/editor');
     } catch (e: unknown) {
       if (typeof e === 'object' && e !== null && 'response' in e) {
@@ -24,18 +43,24 @@ export default function Login() {
       } else {
         setErr('LOGIN FAILED');
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   // Development skip login function
   const handleSkipLogin = async () => {
     if (!isMockMode) return;
+    setErr('');
+    setIsSubmitting(true);
     try {
-      // Use fake credentials for mock mode
       await login('dev@example.com', 'password');
       nav('/editor');
     } catch (e) {
       console.error('Skip login failed:', e);
+      setErr('Skip login failed');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -57,8 +82,12 @@ export default function Login() {
         onChange={e => setPassword(e.target.value)}
         className="w-full mb-4 p-2 border rounded"
       />
-      <button type="submit" className="w-full p-2 bg-blue-500 text-white rounded">
-        LOGIN
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full p-2 bg-blue-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isSubmitting ? 'Logging in…' : 'LOGIN'}
       </button>
       
       {/* Development Skip Login Button - Only visible in mock mode */}
