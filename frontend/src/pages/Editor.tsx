@@ -1,5 +1,5 @@
 // src/pages/Editor.tsx
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -83,7 +83,7 @@ export default function Editor() {
   // )
 
   // Open note from URL ?noteId= when notes have loaded
-  const items = data?.data?.items ?? [];
+  const items = useMemo(() => data?.data?.items ?? [], [data?.data?.items]);
   useEffect(() => {
     if (!noteIdFromUrl || isLoading || items.length === 0) return;
     const id = parseInt(noteIdFromUrl, 10);

@@ -2,12 +2,27 @@
 package testutils
 
 import (
-    "github.com/joho/godotenv"
+	"os"
+
+	"github.com/joho/godotenv"
 )
 
 func LoadTestEnv() {
-    err := godotenv.Load("../../.env.test")
-    if err != nil {
-        panic("Failed to load .env.test file")
-    }
+	// Preserve env if already set (e.g. by CI or local export)
+	dsn := os.Getenv("DATABASE_DSN")
+	jwt := os.Getenv("JWT_SECRET")
+
+	// Try multiple paths: from backend/ or from package dir (internal/handler, etc.)
+	for _, path := range []string{".env.test", "../../.env.test", "../../../.env.test"} {
+		if err := godotenv.Load(path); err == nil {
+			break
+		}
+	}
+
+	if dsn != "" {
+		os.Setenv("DATABASE_DSN", dsn)
+	}
+	if jwt != "" {
+		os.Setenv("JWT_SECRET", jwt)
+	}
 }

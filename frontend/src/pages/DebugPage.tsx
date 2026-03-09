@@ -1,7 +1,7 @@
 import { useListNotes, useUpdateNote } from '../api/gen/client'
 
 export default function DebugNotes() {
-  const { data, isLoading } = useListNotes({ params: { limit: 10, offset: 0 } })
+  const { data, isLoading } = useListNotes({ limit: 10, offset: 0 })
   const update = useUpdateNote()
 
   if (isLoading) return <div>Loading…</div>

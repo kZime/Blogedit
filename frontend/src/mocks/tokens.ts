@@ -1,10 +1,10 @@
 // for frontend fake auth token
 
 
-const b64url = (obj: any) =>
+const b64url = (obj: object) =>
   btoa(JSON.stringify(obj)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')
 
-export const makeJwt = (payload: Record<string, any>) => {
+export const makeJwt = (payload: Record<string, unknown>) => {
   const header = { alg: 'HS256', typ: 'JWT' }
   return `${b64url(header)}.${b64url(payload)}.signature` // 伪签名
 }

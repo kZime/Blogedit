@@ -105,15 +105,14 @@ npm run dev:mock
 
 ## Running Tests
 
+**Backend** (default: no setup required):
+
 ```bash
 cd backend
-
-# Copy test environment variables
-cp .env_test_sample .env.test
-# Edit .env.test with a separate test database (dbname=testdb)
-
 go test ./... -v
 ```
+
+Tests use SQLite in-memory when `DATABASE_DSN=:memory:` in `backend/.env.test` (the default in the sample). No PostgreSQL or test user is needed. To test against a real PostgreSQL instance (e.g. to catch dialect-specific issues), copy `backend/.env_test_sample` to `backend/.env.test`, set `DATABASE_DSN` to a test database, and run the same command. CI runs tests against PostgreSQL.
 
 ## Updating the API Contract
 

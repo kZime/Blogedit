@@ -1,5 +1,5 @@
 // src/api/axios.ts
-import axios from 'axios'
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { getAccessToken, setAccessToken, getRefreshToken } from '../contexts/AuthContext'
 
 const api = axios.create({
@@ -10,10 +10,10 @@ const api = axios.create({
 const isAuthPath = (url?: string) =>
   !!url && /^\/?api\/(v1\/)?auth\//.test(url)
 
-const authRequestInterceptor = (config: any) => {
+const authRequestInterceptor = (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
   const t = getAccessToken()
   if (t) {
-    config.headers = { ...config.headers, Authorization: `Bearer ${t}` }
+    Object.assign(config.headers, { Authorization: `Bearer ${t}` })
   }
   return config
 }
@@ -33,9 +33,15 @@ function onRefreshed(token: string) {
   subscribers = []
 }
 
-const authResponseInterceptor = async (err: any) => {
+interface RetryableConfig {
+  url?: string
+  headers?: Record<string, string>
+  _retry?: boolean
+}
+
+const authResponseInterceptor = async (err: AxiosError) => {
   const status = err?.response?.status
-  const config = err?.config || {}
+  const config: RetryableConfig = (err?.config as RetryableConfig) ?? {}
 
   // not 401 or already retried: pass to upper layer
   if (status !== 401 || config._retry) return Promise.reject(err)
@@ -78,9 +84,13 @@ const authResponseInterceptor = async (err: any) => {
   // suspend current request, retry after refresh
   return new Promise((resolve) => {
     subscribers.push((newToken: string) => {
-      config.headers = { ...config.headers, Authorization: `Bearer ${newToken}` }
-      config._retry = true
-      resolve(api(config))
+      if (err.config) {
+        Object.assign(err.config.headers, { Authorization: `Bearer ${newToken}` })
+        ;(err.config as InternalAxiosRequestConfig & { _retry?: boolean })._retry = true
+        resolve(api(err.config))
+      } else {
+        resolve(Promise.reject(err))
+      }
     })
   })
 }

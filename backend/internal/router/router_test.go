@@ -38,13 +38,11 @@ func (suite *RouterTestSuite) SetupSuite() {
 }
 
 func (suite *RouterTestSuite) TearDownSuite() {
-	// Clean up database
-	database.DB.Exec("DELETE FROM users")
+	_ = database.TruncateAllTables()
 }
 
 func (suite *RouterTestSuite) SetupTest() {
-	// Clean up before each test
-	database.DB.Exec("DELETE FROM users")
+	_ = database.TruncateAllTables()
 }
 
 func (suite *RouterTestSuite) TestAuthRoutes() {

@@ -91,12 +91,14 @@ export const createNoteHandler = http.post('*/api/v1/notes', async ({ request })
   const body = (await request.json()) as CreateNoteRequest
   const ts = nowIso()
 
+  const slugFromTitle = (t: string) =>
+    t.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || 'untitled'
   const note: Note = {
     id: nextNoteId++,
     user_id: 1,
     folder_id: body.folder_id ?? null,
     title: body.title ?? '',
-    slug: body.slug ?? null,
+    slug: slugFromTitle(body.title ?? ''),
     content_md: body.content_md ?? '',
     // For mock, mirror markdown as HTML; real API would render
     content_html: body.content_md ?? '',
@@ -138,7 +140,7 @@ export const updateNoteHandler = http.patch('*/api/v1/notes/:id', async ({ param
     content_html: patch.content_md ?? prev.content_html,
     is_published: patch.is_published ?? prev.is_published,
     visibility: (patch.visibility as Note['visibility']) ?? prev.visibility,
-    slug: patch.slug ?? prev.slug,
+    slug: prev.slug,
     updated_at: nowIso(),
   }
 

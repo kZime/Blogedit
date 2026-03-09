@@ -20,13 +20,13 @@ if (import.meta.env.DEV) {
   // 1) record history API used by React Router
   const _push = history.pushState.bind(history);
   const _replace = history.replaceState.bind(history);
-  history.pushState = (...args: any[]) => {
+  history.pushState = (...args: Parameters<typeof history.pushState>) => {
     console.trace('[history.pushState]', ...args);
-    return _push(...args as Parameters<typeof _push>);
+    return _push(...args);
   };
-  history.replaceState = (...args: any[]) => {
+  history.replaceState = (...args: Parameters<typeof history.replaceState>) => {
     console.trace('[history.replaceState]', ...args);
-    return _replace(...args as Parameters<typeof _replace>);
+    return _replace(...args);
   };
   window.addEventListener('popstate', () => console.trace('[popstate]'));
 

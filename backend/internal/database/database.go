@@ -3,26 +3,38 @@ package database
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"backend/internal/model"
 
 	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 var DB *gorm.DB
 
-// Init: initialize the database connection and auto migrate all models
+// Init initializes the database connection and auto-migrates all models.
+// If DATABASE_DSN is ":memory:" or contains "sqlite", SQLite is used (no setup needed for tests).
+// Otherwise PostgreSQL is used (e.g. production or CI).
 func Init() error {
-
-	// use environment variable to configure DSN
-	// PostgreSQL DSN example:
-	//   host=localhost user=youruser password=yourpw dbname=note_blog port=5432 sslmode=disable TimeZone=UTC
-
-	// get dsn from .env file
 	dsn := os.Getenv("DATABASE_DSN")
+	if dsn == "" {
+		return fmt.Errorf("DATABASE_DSN is not set")
+	}
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	var dialector gorm.Dialector
+	if dsn == ":memory:" || strings.Contains(dsn, "sqlite") {
+		sqliteDSN := dsn
+		if dsn == ":memory:" {
+			sqliteDSN = "file::memory:?cache=shared"
+		}
+		dialector = sqlite.Open(sqliteDSN)
+	} else {
+		dialector = postgres.Open(dsn)
+	}
+
+	db, err := gorm.Open(dialector, &gorm.Config{})
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
@@ -38,5 +50,20 @@ func Init() error {
 	}
 
 	DB = db
+	return nil
+}
+
+// TruncateAllTables deletes all data from tables in dependency order.
+// Works with both PostgreSQL and SQLite (used in tests).
+func TruncateAllTables() error {
+	if DB == nil {
+		return nil
+	}
+	// Order: note_revisions → notes → folders → users
+	for _, table := range []string{"note_revisions", "notes", "folders", "users"} {
+		if err := DB.Exec("DELETE FROM " + table).Error; err != nil {
+			return err
+		}
+	}
 	return nil
 }

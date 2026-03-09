@@ -49,13 +49,12 @@ func (suite *AuthTestSuite) SetupSuite() {
 }
 
 func (suite *AuthTestSuite) TearDownSuite() {
-	// Clean up data in the database
-	database.DB.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
+	_ = database.TruncateAllTables()
 }
 
 func (suite *AuthTestSuite) SetupTest() {
-	// Clean up before each test to ensure isolation
-	database.DB.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
+	// Clean up before each test to ensure isolation (works with both Postgres and SQLite)
+	_ = database.TruncateAllTables()
 	// Reset test state
 	suite.userID = 0
 	suite.accessToken = ""

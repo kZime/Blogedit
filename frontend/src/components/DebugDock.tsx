@@ -1,19 +1,15 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useListNotes, useUpdateNote } from '../api/gen/client'
 
 export default function DebugDock() {
-  // only show in development
-  if (!import.meta.env.DEV) return null
-
   const [open, setOpen] = useState(false)
-
-  // fetch when open, avoid fetching every render
   const { data, isLoading } = useListNotes(
-    { params: { limit: 5, offset: 0 } },
-    { enabled: open }
+    { limit: 5, offset: 0 },
+    { query: { enabled: open } }
   )
-
   const update = useUpdateNote()
+
+  if (!import.meta.env.DEV) return null
 
   return (
     <>

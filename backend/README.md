@@ -72,10 +72,16 @@ backend/
 
 ### Running Tests
 
-#### Prerequisites
-1. Create a test database named `testdb` with username `test` and password `test`
-2. Copy `.env_test_sample` to `.env_test` and configure test database connection
-3. Ensure PostgreSQL is running
+#### Default (no setup)
+With `backend/.env.test` containing `DATABASE_DSN=:memory:` (or no `.env.test` and env not set), tests use **SQLite in-memory** — no PostgreSQL or test user required. Just run:
+
+```bash
+cd backend
+go test -v ./...
+```
+
+#### Optional: test against PostgreSQL
+To run tests against a real PostgreSQL instance (e.g. to catch dialect-specific issues): copy `.env_test_sample` to `.env.test`, set `DATABASE_DSN` to your test database, and run the same command. CI uses PostgreSQL.
 
 #### Test Commands
 
@@ -102,26 +108,6 @@ go test -v ./internal/middleware -run TestJWTMiddlewareSuite/TestValidToken
 go test -v -cover ./...
 go test -v -coverprofile=coverage.out ./...
 go tool cover -html=coverage.out
-```
-
-### Test Environment Setup
-
-#### 1. Database Configuration
-```bash
-# Create test database
-createdb testdb
-
-# Or using psql
-psql -U postgres -c "CREATE DATABASE testdb;"
-psql -U postgres -c "CREATE USER test WITH PASSWORD 'test';"
-psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE testdb TO test;"
-```
-
-#### 2. Environment Variables
-Create `.env_test` file:
-```env
-DATABASE_DSN=host=localhost user=test password=test dbname=testdb port=5432 sslmode=disable TimeZone=UTC
-JWT_SECRET=test-secret-key
 ```
 
 ### Test Data Management
