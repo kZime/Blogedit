@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
 import api from "../api/axios";
+import SiteHeader from "../components/SiteHeader";
 
 interface PublicNoteItem {
   id: number;
@@ -22,7 +22,6 @@ interface PublicNotesPage {
 }
 
 export default function PostList() {
-  const { accessToken } = useAuth();
   const [data, setData] = useState<PublicNotesPage | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,32 +48,7 @@ export default function PostList() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="font-semibold text-gray-800">
-            Blogedit
-          </Link>
-          <nav className="flex items-center gap-4">
-            {accessToken ? (
-              <>
-                <Link to="/editor" className="text-blue-600 hover:underline">
-                  Write
-                </Link>
-                <span className="text-gray-500 text-sm">Logged in</span>
-              </>
-            ) : (
-              <>
-                <Link to="/login" className="text-gray-600 hover:underline">
-                  Login
-                </Link>
-                <Link to="/register" className="text-gray-600 hover:underline">
-                  Register
-                </Link>
-              </>
-            )}
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="max-w-3xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Public posts</h1>

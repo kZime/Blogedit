@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { useAuth } from "../contexts/AuthContext";
 import api from "../api/axios";
+import SiteHeader from "../components/SiteHeader";
 
 interface PublicNote {
   id: number;
@@ -64,42 +65,14 @@ export default function PostDetail() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="font-semibold text-gray-800">
-            Blogedit
-          </Link>
-          <nav className="flex items-center gap-4">
-            <Link to="/" className="text-gray-600 hover:underline">
-              Posts
-            </Link>
-            {accessToken ? (
-              <>
-                <Link to="/editor" className="text-blue-600 hover:underline">
-                  Write
-                </Link>
-                {isAuthor && (
-                  <Link
-                    to={`/editor?noteId=${note?.id}`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    Edit
-                  </Link>
-                )}
-              </>
-            ) : (
-              <>
-                <Link to="/login" className="text-gray-600 hover:underline">
-                  Login
-                </Link>
-                <Link to="/register" className="text-gray-600 hover:underline">
-                  Register
-                </Link>
-              </>
-            )}
-          </nav>
-        </div>
-      </header>
+      <SiteHeader
+        showPostsLink
+        editLink={
+          isAuthor && note
+            ? { to: `/editor?noteId=${note.id}`, label: "Edit" }
+            : null
+        }
+      />
 
       <main className="max-w-3xl mx-auto px-4 py-8">
         {loading && <p className="text-gray-500">Loading…</p>}
