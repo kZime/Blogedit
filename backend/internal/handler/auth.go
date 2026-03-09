@@ -57,11 +57,12 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// return basic info (without password)
+	// return User shape (OpenAPI): id, username, email, created_at
 	c.JSON(http.StatusCreated, gin.H{
-		"id":       user.ID,
-		"username": user.Username,
-		"email":    user.Email,
+		"id":         user.ID,
+		"username":   user.Username,
+		"email":      user.Email,
+		"created_at": user.CreatedAt.Format(time.RFC3339),
 	})
 }
 

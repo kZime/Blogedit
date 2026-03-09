@@ -40,7 +40,7 @@ paths:
               email: a@ex.com
               password: secret123
       responses:
-        "200":
+        "201":
           description: Registered
           content:
             application/json:
