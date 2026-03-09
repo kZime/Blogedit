@@ -40,7 +40,7 @@ jobs:
       - name: Create .env.test file
         run: |
           echo "DATABASE_DSN=host=localhost user=test password=test dbname=testdb port=5432 sslmode=disable TimeZone=UTC" > backend/.env.test
-          echo "JWT_SECRET=test-secret" >> backend/.env.test
+          echo "JWT_SECRET=test-secret-for-jwt-min-32-chars!!" >> backend/.env.test
 
       # Step 4: Install dependencies
       - name: Install dependencies
@@ -119,7 +119,7 @@ jobs:
       - name: Create .env.test file
         run: |
           echo "DATABASE_DSN=host=localhost user=test password=test dbname=testdb port=5432 sslmode=disable TimeZone=UTC" > backend/.env.test
-          echo "JWT_SECRET=test-secret" >> backend/.env.test
+          echo "JWT_SECRET=test-secret-for-jwt-min-32-chars!!" >> backend/.env.test
 
       # Step 4: Install dependencies
       - name: Install dependencies

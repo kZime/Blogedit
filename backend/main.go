@@ -3,6 +3,7 @@ package main
 import (
 	"backend/internal/database"
 	"log"
+	"os"
 
 	"backend/internal/router"
 
@@ -20,6 +21,12 @@ func main() {
 	// Init database
 	if err := database.Init(); err != nil {
 		log.Fatalf("failed to initialize the database: %v", err)
+	}
+
+	// Require JWT_SECRET for security (min 32 chars)
+	const minJWTSecretLen = 32
+	if secret := os.Getenv("JWT_SECRET"); len(secret) < minJWTSecretLen {
+		log.Fatalf("JWT_SECRET must be at least %d characters", minJWTSecretLen)
 	}
 
 	// Init router
