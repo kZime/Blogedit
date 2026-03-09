@@ -70,6 +70,6 @@ func TruncateAllTables() error {
 		}
 		return nil
 	}
-	// PostgreSQL: single TRUNCATE with CASCADE and identity reset
-	return DB.Exec("TRUNCATE TABLE note_revisions, notes, folders, users RESTART IDENTITY CASCADE").Error
+	// PostgreSQL: single TRUNCATE with CASCADE and identity reset (public schema for CI/macOS)
+	return DB.Exec("TRUNCATE TABLE public.note_revisions, public.notes, public.folders, public.users RESTART IDENTITY CASCADE").Error
 }

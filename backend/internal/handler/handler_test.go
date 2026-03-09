@@ -3,11 +3,12 @@
 package handler
 
 import (
-	"testing"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"testing"
 	"time"
 
 	"backend/internal/database"
@@ -61,41 +62,35 @@ func (suite *AuthTestSuite) SetupTest() {
 	suite.refreshToken = ""
 }
 
-// TestRegisterSuccess tests user registration
+// TestRegisterSuccess tests user registration (uses unique email to avoid cross-test leakage in CI)
 func (suite *AuthTestSuite) TestRegisterSuccess() {
-	// Create a payload for the request
+	uniqueEmail := fmt.Sprintf("test-reg-%d@example.com", time.Now().UnixNano())
 	payload := registerRequest{
 		Username: "testuser",
-		Email:    "test@example.com",
+		Email:    uniqueEmail,
 		Password: "testpassword",
 	}
 
-	// Convert payload to JSON
 	body, err := json.Marshal(payload)
 	suite.NoError(err, "Failed to marshal payload")
 
-	// Create a new HTTP request
 	req, err := http.NewRequest("POST", "/api/auth/register", bytes.NewBuffer(body))
 	suite.NoError(err, "Failed to create request")
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
-	// Perform the request
 	suite.router.ServeHTTP(w, req)
 
-	// Check the response status code
 	suite.Equal(http.StatusCreated, w.Code, "Expected status code 201 Created")
-	
-	// Check the response body
+
 	var response map[string]interface{}
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	suite.NoError(err)
-	
+
 	suite.Equal("testuser", response["username"], "Expected username to be 'testuser'")
-	suite.Equal("test@example.com", response["email"], "Expected email to be 'test@example.com'")
+	suite.Equal(uniqueEmail, response["email"], "Expected email to match")
 	suite.NotEmpty(response["id"], "Expected user ID to be present")
-	
-	// Store user ID for other tests
+
 	suite.userID = uint(response["id"].(float64))
 }
 
