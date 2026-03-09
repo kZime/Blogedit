@@ -15,6 +15,4 @@ export interface CreateNoteRequest {
   /** @nullable */
   folder_id?: number | null;
   content_md?: string;
-  /** @nullable */
-  slug?: string | null;
 }

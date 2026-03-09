@@ -8,6 +8,7 @@ module.exports = {
     output: {
       target: 'src/api/gen/client.ts',
       client: 'react-query',
+      httpClient: 'axios',
       mock: true,
       baseUrl: '',
       schemas: 'src/api/gen/models',

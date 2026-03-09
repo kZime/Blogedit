@@ -18,8 +18,6 @@ export interface UpdateNoteRequest {
   content_md?: string;
   is_published?: boolean;
   visibility?: UpdateNoteRequestVisibility;
-  /** @nullable */
-  slug?: string | null;
   /** Required for optimistic concurrency */
   updated_at?: string;
 }

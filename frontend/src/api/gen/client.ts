@@ -14,9 +14,14 @@ import {
   useQuery
 } from '@tanstack/react-query';
 import type {
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
   MutationFunction,
+  QueryClient,
   QueryFunction,
   QueryKey,
+  UndefinedInitialDataOptions,
   UseMutationOptions,
   UseMutationResult,
   UseQueryOptions,
@@ -113,7 +118,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
  */
 export const useAuthRegister = <TError = AxiosError<Error>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authRegister>>, TError,{data: RegisterRequest}, TContext>, axios?: AxiosRequestConfig}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof authRegister>>,
         TError,
         {data: RegisterRequest},
@@ -122,7 +127,7 @@ export const useAuthRegister = <TError = AxiosError<Error>,
 
       const mutationOptions = getAuthRegisterMutationOptions(options);
 
-      return useMutation(mutationOptions );
+      return useMutation(mutationOptions , queryClient);
     }
     
 /**
@@ -175,7 +180,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
  */
 export const useAuthLogin = <TError = AxiosError<Error>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authLogin>>, TError,{data: LoginRequest}, TContext>, axios?: AxiosRequestConfig}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof authLogin>>,
         TError,
         {data: LoginRequest},
@@ -184,7 +189,7 @@ export const useAuthLogin = <TError = AxiosError<Error>,
 
       const mutationOptions = getAuthLoginMutationOptions(options);
 
-      return useMutation(mutationOptions );
+      return useMutation(mutationOptions , queryClient);
     }
     
 /**
@@ -237,7 +242,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
  */
 export const useAuthRefresh = <TError = AxiosError<Error>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authRefresh>>, TError,{data: AuthRefreshBody}, TContext>, axios?: AxiosRequestConfig}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof authRefresh>>,
         TError,
         {data: AuthRefreshBody},
@@ -246,7 +251,7 @@ export const useAuthRefresh = <TError = AxiosError<Error>,
 
       const mutationOptions = getAuthRefreshMutationOptions(options);
 
-      return useMutation(mutationOptions );
+      return useMutation(mutationOptions , queryClient);
     }
     
 /**
@@ -268,7 +273,7 @@ export const getGetCurrentUserQueryKey = () => {
     }
 
     
-export const getGetCurrentUserQueryOptions = <TData = Awaited<ReturnType<typeof getCurrentUser>>, TError = AxiosError<Error>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentUser>>, TError, TData>, axios?: AxiosRequestConfig}
+export const getGetCurrentUserQueryOptions = <TData = Awaited<ReturnType<typeof getCurrentUser>>, TError = AxiosError<Error>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCurrentUser>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
 const {query: queryOptions, axios: axiosOptions} = options ?? {};
@@ -283,25 +288,49 @@ const {query: queryOptions, axios: axiosOptions} = options ?? {};
 
       
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCurrentUser>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCurrentUser>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetCurrentUserQueryResult = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>
 export type GetCurrentUserQueryError = AxiosError<Error>
 
 
+export function useGetCurrentUser<TData = Awaited<ReturnType<typeof getCurrentUser>>, TError = AxiosError<Error>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCurrentUser>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCurrentUser>>,
+          TError,
+          Awaited<ReturnType<typeof getCurrentUser>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCurrentUser<TData = Awaited<ReturnType<typeof getCurrentUser>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCurrentUser>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCurrentUser>>,
+          TError,
+          Awaited<ReturnType<typeof getCurrentUser>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCurrentUser<TData = Awaited<ReturnType<typeof getCurrentUser>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCurrentUser>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get current user
  */
 
 export function useGetCurrentUser<TData = Awaited<ReturnType<typeof getCurrentUser>>, TError = AxiosError<Error>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentUser>>, TError, TData>, axios?: AxiosRequestConfig}
-  
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCurrentUser>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetCurrentUserQueryOptions(options)
 
-  const query = useQuery(queryOptions ) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions , queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   query.queryKey = queryOptions.queryKey ;
 
@@ -332,7 +361,7 @@ export const getListNotesQueryKey = (params?: ListNotesParams,) => {
     }
 
     
-export const getListNotesQueryOptions = <TData = Awaited<ReturnType<typeof listNotes>>, TError = AxiosError<Error>>(params?: ListNotesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData>, axios?: AxiosRequestConfig}
+export const getListNotesQueryOptions = <TData = Awaited<ReturnType<typeof listNotes>>, TError = AxiosError<Error>>(params?: ListNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
 const {query: queryOptions, axios: axiosOptions} = options ?? {};
@@ -347,25 +376,49 @@ const {query: queryOptions, axios: axiosOptions} = options ?? {};
 
       
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type ListNotesQueryResult = NonNullable<Awaited<ReturnType<typeof listNotes>>>
 export type ListNotesQueryError = AxiosError<Error>
 
 
+export function useListNotes<TData = Awaited<ReturnType<typeof listNotes>>, TError = AxiosError<Error>>(
+ params: undefined |  ListNotesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listNotes>>,
+          TError,
+          Awaited<ReturnType<typeof listNotes>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListNotes<TData = Awaited<ReturnType<typeof listNotes>>, TError = AxiosError<Error>>(
+ params?: ListNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listNotes>>,
+          TError,
+          Awaited<ReturnType<typeof listNotes>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListNotes<TData = Awaited<ReturnType<typeof listNotes>>, TError = AxiosError<Error>>(
+ params?: ListNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List notes
  */
 
 export function useListNotes<TData = Awaited<ReturnType<typeof listNotes>>, TError = AxiosError<Error>>(
- params?: ListNotesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData>, axios?: AxiosRequestConfig}
-  
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+ params?: ListNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getListNotesQueryOptions(params,options)
 
-  const query = useQuery(queryOptions ) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions , queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   query.queryKey = queryOptions.queryKey ;
 
@@ -425,7 +478,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
  */
 export const useCreateNote = <TError = AxiosError<Error | Error>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createNote>>, TError,{data: CreateNoteRequest}, TContext>, axios?: AxiosRequestConfig}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createNote>>,
         TError,
         {data: CreateNoteRequest},
@@ -434,7 +487,7 @@ export const useCreateNote = <TError = AxiosError<Error | Error>,
 
       const mutationOptions = getCreateNoteMutationOptions(options);
 
-      return useMutation(mutationOptions );
+      return useMutation(mutationOptions , queryClient);
     }
     
 /**
@@ -456,7 +509,7 @@ export const getGetNoteQueryKey = (id?: number,) => {
     }
 
     
-export const getGetNoteQueryOptions = <TData = Awaited<ReturnType<typeof getNote>>, TError = AxiosError<Error | Error>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData>, axios?: AxiosRequestConfig}
+export const getGetNoteQueryOptions = <TData = Awaited<ReturnType<typeof getNote>>, TError = AxiosError<Error | Error>>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
 const {query: queryOptions, axios: axiosOptions} = options ?? {};
@@ -471,25 +524,49 @@ const {query: queryOptions, axios: axiosOptions} = options ?? {};
 
       
 
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetNoteQueryResult = NonNullable<Awaited<ReturnType<typeof getNote>>>
 export type GetNoteQueryError = AxiosError<Error | Error>
 
 
+export function useGetNote<TData = Awaited<ReturnType<typeof getNote>>, TError = AxiosError<Error | Error>>(
+ id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getNote>>,
+          TError,
+          Awaited<ReturnType<typeof getNote>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetNote<TData = Awaited<ReturnType<typeof getNote>>, TError = AxiosError<Error | Error>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getNote>>,
+          TError,
+          Awaited<ReturnType<typeof getNote>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetNote<TData = Awaited<ReturnType<typeof getNote>>, TError = AxiosError<Error | Error>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get note by id
  */
 
 export function useGetNote<TData = Awaited<ReturnType<typeof getNote>>, TError = AxiosError<Error | Error>>(
- id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData>, axios?: AxiosRequestConfig}
-  
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetNoteQueryOptions(id,options)
 
-  const query = useQuery(queryOptions ) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions , queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   query.queryKey = queryOptions.queryKey ;
 
@@ -550,7 +627,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
  */
 export const useUpdateNote = <TError = AxiosError<Error | Error | VersionConflictError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateNote>>, TError,{id: number;data: UpdateNoteRequest}, TContext>, axios?: AxiosRequestConfig}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof updateNote>>,
         TError,
         {id: number;data: UpdateNoteRequest},
@@ -559,7 +636,7 @@ export const useUpdateNote = <TError = AxiosError<Error | Error | VersionConflic
 
       const mutationOptions = getUpdateNoteMutationOptions(options);
 
-      return useMutation(mutationOptions );
+      return useMutation(mutationOptions , queryClient);
     }
     
 /**
@@ -611,7 +688,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
  */
 export const useDeleteNote = <TError = AxiosError<Error | Error>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteNote>>, TError,{id: number}, TContext>, axios?: AxiosRequestConfig}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteNote>>,
         TError,
         {id: number},
@@ -620,7 +697,7 @@ export const useDeleteNote = <TError = AxiosError<Error | Error>,
 
       const mutationOptions = getDeleteNoteMutationOptions(options);
 
-      return useMutation(mutationOptions );
+      return useMutation(mutationOptions , queryClient);
     }
     
 /**
@@ -673,7 +750,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
  */
 export const useCreateFolder = <TError = AxiosError<Error>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFolder>>, TError,{data: CreateFolderRequest}, TContext>, axios?: AxiosRequestConfig}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createFolder>>,
         TError,
         {data: CreateFolderRequest},
@@ -682,7 +759,7 @@ export const useCreateFolder = <TError = AxiosError<Error>,
 
       const mutationOptions = getCreateFolderMutationOptions(options);
 
-      return useMutation(mutationOptions );
+      return useMutation(mutationOptions , queryClient);
     }
     
 /**
@@ -736,7 +813,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
  */
 export const useUpdateFolder = <TError = AxiosError<Error>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFolder>>, TError,{id: number;data: UpdateFolderRequest}, TContext>, axios?: AxiosRequestConfig}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof updateFolder>>,
         TError,
         {id: number;data: UpdateFolderRequest},
@@ -745,7 +822,7 @@ export const useUpdateFolder = <TError = AxiosError<Error>,
 
       const mutationOptions = getUpdateFolderMutationOptions(options);
 
-      return useMutation(mutationOptions );
+      return useMutation(mutationOptions , queryClient);
     }
     
 /**
@@ -797,7 +874,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
  */
 export const useDeleteFolder = <TError = AxiosError<Error | Error>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteFolder>>, TError,{id: number}, TContext>, axios?: AxiosRequestConfig}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteFolder>>,
         TError,
         {id: number},
@@ -806,7 +883,7 @@ export const useDeleteFolder = <TError = AxiosError<Error | Error>,
 
       const mutationOptions = getDeleteFolderMutationOptions(options);
 
-      return useMutation(mutationOptions );
+      return useMutation(mutationOptions , queryClient);
     }
     
 /**
@@ -859,7 +936,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
  */
 export const useReorderTree = <TError = AxiosError<Error>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reorderTree>>, TError,{data: ReorderRequest}, TContext>, axios?: AxiosRequestConfig}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof reorderTree>>,
         TError,
         {data: ReorderRequest},
@@ -868,29 +945,29 @@ export const useReorderTree = <TError = AxiosError<Error>,
 
       const mutationOptions = getReorderTreeMutationOptions(options);
 
-      return useMutation(mutationOptions );
+      return useMutation(mutationOptions , queryClient);
     }
 
 
-export const getAuthRegisterResponseMock = (overrideResponse: Partial< User > = {}): User => ({id: faker.number.int({min: undefined, max: undefined}), username: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
+export const getAuthRegisterResponseMock = (overrideResponse: Partial< User > = {}): User => ({id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), username: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
 
-export const getAuthLoginResponseMock = (overrideResponse: Partial< AuthTokens > = {}): AuthTokens => ({access_token: faker.string.alpha({length: {min: 10, max: 20}}), refresh_token: faker.string.alpha({length: {min: 10, max: 20}}), expires_in: faker.number.int({min: undefined, max: undefined}), ...overrideResponse})
+export const getAuthLoginResponseMock = (overrideResponse: Partial< AuthTokens > = {}): AuthTokens => ({access_token: faker.string.alpha({length: {min: 10, max: 20}}), refresh_token: faker.string.alpha({length: {min: 10, max: 20}}), expires_in: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), ...overrideResponse})
 
-export const getAuthRefreshResponseMock = (overrideResponse: Partial< AuthTokens > = {}): AuthTokens => ({access_token: faker.string.alpha({length: {min: 10, max: 20}}), refresh_token: faker.string.alpha({length: {min: 10, max: 20}}), expires_in: faker.number.int({min: undefined, max: undefined}), ...overrideResponse})
+export const getAuthRefreshResponseMock = (overrideResponse: Partial< AuthTokens > = {}): AuthTokens => ({access_token: faker.string.alpha({length: {min: 10, max: 20}}), refresh_token: faker.string.alpha({length: {min: 10, max: 20}}), expires_in: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), ...overrideResponse})
 
-export const getGetCurrentUserResponseMock = (overrideResponse: Partial< User > = {}): User => ({id: faker.number.int({min: undefined, max: undefined}), username: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
+export const getGetCurrentUserResponseMock = (overrideResponse: Partial< User > = {}): User => ({id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), username: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
 
-export const getListNotesResponseMock = (overrideResponse: Partial< NotesPage > = {}): NotesPage => ({items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), user_id: faker.number.int({min: undefined, max: undefined}), folder_id: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), title: faker.string.alpha({length: {min: 10, max: 20}}), slug: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), content_md: faker.string.alpha({length: {min: 10, max: 20}}), content_html: faker.string.alpha({length: {min: 10, max: 20}}), is_published: faker.datatype.boolean(), visibility: faker.helpers.arrayElement(['private','unlisted','public'] as const), sort_order: faker.number.int({min: undefined, max: undefined}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`})), total: faker.number.int({min: undefined, max: undefined}), limit: faker.number.int({min: undefined, max: undefined}), offset: faker.number.int({min: undefined, max: undefined}), ...overrideResponse})
+export const getListNotesResponseMock = (overrideResponse: Partial< NotesPage > = {}): NotesPage => ({items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), user_id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), folder_id: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), null]), undefined]), title: faker.string.alpha({length: {min: 10, max: 20}}), slug: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), content_md: faker.string.alpha({length: {min: 10, max: 20}}), content_html: faker.string.alpha({length: {min: 10, max: 20}}), is_published: faker.datatype.boolean(), visibility: faker.helpers.arrayElement(['private','unlisted','public'] as const), sort_order: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`})), total: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), limit: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), offset: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), ...overrideResponse})
 
-export const getCreateNoteResponseMock = (overrideResponse: Partial< Note > = {}): Note => ({id: faker.number.int({min: undefined, max: undefined}), user_id: faker.number.int({min: undefined, max: undefined}), folder_id: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), title: faker.string.alpha({length: {min: 10, max: 20}}), slug: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), content_md: faker.string.alpha({length: {min: 10, max: 20}}), content_html: faker.string.alpha({length: {min: 10, max: 20}}), is_published: faker.datatype.boolean(), visibility: faker.helpers.arrayElement(['private','unlisted','public'] as const), sort_order: faker.number.int({min: undefined, max: undefined}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
+export const getCreateNoteResponseMock = (overrideResponse: Partial< Note > = {}): Note => ({id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), user_id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), folder_id: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), null]), undefined]), title: faker.string.alpha({length: {min: 10, max: 20}}), slug: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), content_md: faker.string.alpha({length: {min: 10, max: 20}}), content_html: faker.string.alpha({length: {min: 10, max: 20}}), is_published: faker.datatype.boolean(), visibility: faker.helpers.arrayElement(['private','unlisted','public'] as const), sort_order: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
 
-export const getGetNoteResponseMock = (overrideResponse: Partial< Note > = {}): Note => ({id: faker.number.int({min: undefined, max: undefined}), user_id: faker.number.int({min: undefined, max: undefined}), folder_id: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), title: faker.string.alpha({length: {min: 10, max: 20}}), slug: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), content_md: faker.string.alpha({length: {min: 10, max: 20}}), content_html: faker.string.alpha({length: {min: 10, max: 20}}), is_published: faker.datatype.boolean(), visibility: faker.helpers.arrayElement(['private','unlisted','public'] as const), sort_order: faker.number.int({min: undefined, max: undefined}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
+export const getGetNoteResponseMock = (overrideResponse: Partial< Note > = {}): Note => ({id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), user_id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), folder_id: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), null]), undefined]), title: faker.string.alpha({length: {min: 10, max: 20}}), slug: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), content_md: faker.string.alpha({length: {min: 10, max: 20}}), content_html: faker.string.alpha({length: {min: 10, max: 20}}), is_published: faker.datatype.boolean(), visibility: faker.helpers.arrayElement(['private','unlisted','public'] as const), sort_order: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
 
-export const getUpdateNoteResponseMock = (overrideResponse: Partial< Note > = {}): Note => ({id: faker.number.int({min: undefined, max: undefined}), user_id: faker.number.int({min: undefined, max: undefined}), folder_id: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), title: faker.string.alpha({length: {min: 10, max: 20}}), slug: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), content_md: faker.string.alpha({length: {min: 10, max: 20}}), content_html: faker.string.alpha({length: {min: 10, max: 20}}), is_published: faker.datatype.boolean(), visibility: faker.helpers.arrayElement(['private','unlisted','public'] as const), sort_order: faker.number.int({min: undefined, max: undefined}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
+export const getUpdateNoteResponseMock = (overrideResponse: Partial< Note > = {}): Note => ({id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), user_id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), folder_id: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), null]), undefined]), title: faker.string.alpha({length: {min: 10, max: 20}}), slug: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), content_md: faker.string.alpha({length: {min: 10, max: 20}}), content_html: faker.string.alpha({length: {min: 10, max: 20}}), is_published: faker.datatype.boolean(), visibility: faker.helpers.arrayElement(['private','unlisted','public'] as const), sort_order: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
 
-export const getCreateFolderResponseMock = (overrideResponse: Partial< Folder > = {}): Folder => ({id: faker.number.int({min: undefined, max: undefined}), user_id: faker.number.int({min: undefined, max: undefined}), name: faker.string.alpha({length: {min: 10, max: 20}}), parent_id: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), sort_order: faker.number.int({min: undefined, max: undefined}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
+export const getCreateFolderResponseMock = (overrideResponse: Partial< Folder > = {}): Folder => ({id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), user_id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), name: faker.string.alpha({length: {min: 10, max: 20}}), parent_id: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), null]), undefined]), sort_order: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
 
-export const getUpdateFolderResponseMock = (overrideResponse: Partial< Folder > = {}): Folder => ({id: faker.number.int({min: undefined, max: undefined}), user_id: faker.number.int({min: undefined, max: undefined}), name: faker.string.alpha({length: {min: 10, max: 20}}), parent_id: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), sort_order: faker.number.int({min: undefined, max: undefined}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
+export const getUpdateFolderResponseMock = (overrideResponse: Partial< Folder > = {}): Folder => ({id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), user_id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), name: faker.string.alpha({length: {min: 10, max: 20}}), parent_id: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), null]), undefined]), sort_order: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
 
 export const getReorderTreeResponseMock = (overrideResponse: Partial< ReorderTree200 > = {}): ReorderTree200 => ({ok: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), ...overrideResponse})
 
