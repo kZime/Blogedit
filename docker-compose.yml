@@ -1,6 +1,9 @@
 # Target Ubuntu server (linux/amd64). Remove or set to linux/arm64 for ARM (e.g. Graviton).
+name: boardit
+
 services:
   postgres:
+    container_name: boardit-postgres
     image: postgres:15-alpine
     platform: linux/amd64
     environment:
@@ -16,6 +19,7 @@ services:
       retries: 5
 
   backend:
+    container_name: boardit-backend
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -31,6 +35,7 @@ services:
     restart: unless-stopped
 
   frontend:
+    container_name: boardit-frontend
     build:
       context: ./frontend
       dockerfile: Dockerfile
