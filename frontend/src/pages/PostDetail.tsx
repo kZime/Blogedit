@@ -4,12 +4,15 @@ import ReactMarkdown from "react-markdown";
 import { useAuth } from "../contexts/AuthContext";
 import api from "../api/axios";
 import SiteHeader from "../components/SiteHeader";
+import PostHeaderCard from "../components/PostHeaderCard";
+import { parseFrontmatterAndBody } from "../utils/markdownCover";
 
 interface PublicNote {
   id: number;
   user_id: number;
   title: string;
   slug: string;
+  cover_url?: string;
   content_md: string;
   content_html: string;
   author_username: string;
@@ -62,6 +65,8 @@ export default function PostDetail() {
   };
 
   const isAuthor = note && currentUserId !== null && note.user_id === currentUserId;
+  const coverUrl = note ? (note.cover_url || null) : null;
+  const bodyMarkdown = note ? parseFrontmatterAndBody(note.content_md || "").body : "";
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
@@ -88,17 +93,17 @@ export default function PostDetail() {
         )}
 
         {note && !loading && (
-          <article className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 md:p-8 shadow-sm dark:shadow-none">
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2 tracking-tight">
-              {note.title || "(Untitled)"}
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              {note.author_username} · {formatDate(note.updated_at)}
-            </p>
-            <div className="prose prose-gray dark:prose-invert max-w-none prose-headings:text-gray-900 dark:prose-headings:text-gray-100 prose-p:text-gray-700 dark:prose-p:text-gray-300">
-              <ReactMarkdown>{note.content_md || ""}</ReactMarkdown>
-            </div>
-          </article>
+          <>
+            <PostHeaderCard title={note.title || "(Untitled)"} coverUrl={coverUrl} />
+            <article className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 md:p-8 shadow-sm dark:shadow-none">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                {note.author_username} · {formatDate(note.updated_at)}
+              </p>
+              <div className="prose prose-gray dark:prose-invert max-w-none prose-headings:text-gray-900 dark:prose-headings:text-gray-100 prose-p:text-gray-700 dark:prose-p:text-gray-300">
+                <ReactMarkdown>{bodyMarkdown}</ReactMarkdown>
+              </div>
+            </article>
+          </>
         )}
       </main>
     </div>

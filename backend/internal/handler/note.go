@@ -17,6 +17,27 @@ import (
 	"gorm.io/gorm"
 )
 
+// stripFrontmatter removes the leading --- ... --- frontmatter block from markdown.
+// If no frontmatter is present the original string is returned unchanged.
+func stripFrontmatter(md string) string {
+	trimmed := strings.TrimSpace(md)
+	if !strings.HasPrefix(trimmed, "---") {
+		return md
+	}
+	lines := strings.Split(trimmed, "\n")
+	if strings.TrimSpace(lines[0]) != "---" {
+		return md
+	}
+	for i := 1; i < len(lines); i++ {
+		if strings.TrimSpace(lines[i]) == "---" {
+			body := strings.Join(lines[i+1:], "\n")
+			return strings.TrimSpace(body)
+		}
+	}
+	// No closing ---; return as-is
+	return md
+}
+
 // ------------------------------------------------------------
 // List Notes
 // GET /api/v1/notes
@@ -57,7 +78,7 @@ func ListNotes(c *gin.Context) {
 	// Get user ID from JWT token
 	userID, exists := c.Get("userID")
 	if !exists {
-			response.Error(c, http.StatusUnauthorized, "UNAUTHORIZED", "invalid token")
+		response.Error(c, http.StatusUnauthorized, "UNAUTHORIZED", "invalid token")
 		return
 	}
 	// Build query
@@ -70,7 +91,7 @@ func ListNotes(c *gin.Context) {
 	if searchQuery != "" {
 		query = query.Where("title LIKE ? OR content_md LIKE ?", "%"+searchQuery+"%", "%"+searchQuery+"%")
 	}
-	
+
 	if status != "" && status != "all" {
 		if status == "published" {
 			query = query.Where("is_published = ?", true)
@@ -102,7 +123,6 @@ func ListNotes(c *gin.Context) {
 	})
 }
 
-
 // ------------------------------------------------------------
 // Create Note
 // POST /api/v1/notes
@@ -128,7 +148,7 @@ func CreateNote(c *gin.Context) {
 	// Get user ID from JWT token
 	userID, exists := c.Get("userID")
 	if !exists {
-			response.Error(c, http.StatusUnauthorized, "UNAUTHORIZED", "invalid token")
+		response.Error(c, http.StatusUnauthorized, "UNAUTHORIZED", "invalid token")
 		return
 	}
 
@@ -205,32 +225,32 @@ func CreateNote(c *gin.Context) {
 func generateSlug(title string) string {
 	// Convert to lowercase
 	slug := strings.ToLower(title)
-	
+
 	// Replace spaces with hyphens
 	slug = strings.ReplaceAll(slug, " ", "-")
-	
+
 	// Remove special characters, keep only letters, numbers, and hyphens
 	reg := regexp.MustCompile("[^a-z0-9-]")
 	slug = reg.ReplaceAllString(slug, "")
-	
+
 	// Replace multiple hyphens with single hyphen
 	reg = regexp.MustCompile("-+")
 	slug = reg.ReplaceAllString(slug, "-")
-	
+
 	// Remove leading and trailing hyphens
 	slug = strings.Trim(slug, "-")
-	
+
 	// If slug is empty, use default
 	if slug == "" {
 		slug = "untitled"
 	}
-	
+
 	return slug
 }
 
 func generateUniqueSlug(title string, userID uint, excludeNoteID *uint) string {
 	baseSlug := generateSlug(title)
-	
+
 	// Check if base slug is available
 	var count int64
 	query := database.DB.Where("user_id = ? AND slug = ?", userID, baseSlug)
@@ -238,11 +258,11 @@ func generateUniqueSlug(title string, userID uint, excludeNoteID *uint) string {
 		query = query.Where("id != ?", *excludeNoteID)
 	}
 	query.Model(&model.Note{}).Count(&count)
-	
+
 	if count == 0 {
 		return baseSlug
 	}
-	
+
 	// If there's a conflict, add numeric suffix
 	for i := 2; i <= 999; i++ {
 		candidateSlug := fmt.Sprintf("%s-%d", baseSlug, i)
@@ -251,12 +271,12 @@ func generateUniqueSlug(title string, userID uint, excludeNoteID *uint) string {
 			query = query.Where("id != ?", *excludeNoteID)
 		}
 		query.Model(&model.Note{}).Count(&count)
-		
+
 		if count == 0 {
 			return candidateSlug
 		}
 	}
-	
+
 	// Fallback: use timestamp suffix if we somehow exhaust numeric options
 	timestamp := time.Now().Unix()
 	return fmt.Sprintf("%s-%d", baseSlug, timestamp)
@@ -265,30 +285,30 @@ func generateUniqueSlug(title string, userID uint, excludeNoteID *uint) string {
 func convertMarkdownToHTML(markdown string) string {
 	// Basic markdown to HTML conversion
 	// In production, you should use a proper markdown parser like goldmark
-	
+
 	// Replace # with <h1>
 	reg := regexp.MustCompile(`^# (.+)$`)
 	html := reg.ReplaceAllString(markdown, "<h1>$1</h1>")
-	
+
 	// Replace ## with <h2>
 	reg = regexp.MustCompile(`^## (.+)$`)
 	html = reg.ReplaceAllString(html, "<h2>$1</h2>")
-	
+
 	// Replace ### with <h3>
 	reg = regexp.MustCompile(`^### (.+)$`)
 	html = reg.ReplaceAllString(html, "<h3>$1</h3>")
-	
+
 	// Replace **text** with <strong>text</strong>
 	reg = regexp.MustCompile(`\*\*(.+?)\*\*`)
 	html = reg.ReplaceAllString(html, "<strong>$1</strong>")
-	
+
 	// Replace *text* with <em>text</em>
 	reg = regexp.MustCompile(`\*(.+?)\*`)
 	html = reg.ReplaceAllString(html, "<em>$1</em>")
-	
+
 	// Replace line breaks with <br>
 	html = strings.ReplaceAll(html, "\n", "<br>")
-	
+
 	return html
 }
 
@@ -308,7 +328,7 @@ func GetNote(c *gin.Context) {
 		return
 	}
 	noteID := uint(idInt)
-	
+
 	// Get user ID from JWT token
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -333,6 +353,7 @@ func GetNote(c *gin.Context) {
 		"user_id":      note.UserID,
 		"title":        note.Title,
 		"slug":         note.Slug,
+		"cover_url":    note.CoverURL,
 		"content_md":   note.ContentMd,
 		"content_html": note.ContentHtml,
 		"is_published": note.IsPublished,
@@ -365,6 +386,7 @@ func GetNote(c *gin.Context) {
 type updateNoteRequest struct {
 	Title       *string `json:"title"`
 	FolderID    *uint   `json:"folder_id"`
+	CoverURL    *string `json:"cover_url"`
 	ContentMd   *string `json:"content_md"`
 	IsPublished *bool   `json:"is_published"`
 	Visibility  *string `json:"visibility"`
@@ -415,11 +437,11 @@ func UpdateNote(c *gin.Context) {
 			response.Error(c, http.StatusBadRequest, "VALIDATION_ERROR", "invalid updated_at format")
 			return
 		}
-		
+
 		if !note.UpdatedAt.Equal(expectedTime) {
 			c.JSON(http.StatusConflict, gin.H{
-				"error":   "VERSION_CONFLICT",
-				"message": "note has been modified by another client",
+				"error":             "VERSION_CONFLICT",
+				"message":           "note has been modified by another client",
 				"server_updated_at": note.UpdatedAt.Format(time.RFC3339),
 				"server_snapshot": gin.H{
 					"id":           note.ID,
@@ -442,29 +464,34 @@ func UpdateNote(c *gin.Context) {
 
 	// Update note fields
 	hasChanges := false
-	
+
 	if req.Title != nil {
 		note.Title = *req.Title
 		note.Slug = generateUniqueSlug(*req.Title, userID.(uint), &noteID)
 		hasChanges = true
 	}
-	
+
 	if req.FolderID != nil {
 		note.FolderID = req.FolderID
 		hasChanges = true
 	}
-	
+
+	if req.CoverURL != nil && *req.CoverURL != note.CoverURL {
+		note.CoverURL = *req.CoverURL
+		hasChanges = true
+	}
+
 	if req.ContentMd != nil && *req.ContentMd != note.ContentMd {
 		note.ContentMd = *req.ContentMd
 		note.ContentHtml = convertMarkdownToHTML(*req.ContentMd)
 		hasChanges = true
 	}
-	
+
 	if req.IsPublished != nil {
 		note.IsPublished = *req.IsPublished
 		hasChanges = true
 	}
-	
+
 	if req.Visibility != nil {
 		note.Visibility = *req.Visibility
 		hasChanges = true
@@ -477,6 +504,7 @@ func UpdateNote(c *gin.Context) {
 			"user_id":      note.UserID,
 			"title":        note.Title,
 			"slug":         note.Slug,
+			"cover_url":    note.CoverURL,
 			"content_md":   note.ContentMd,
 			"content_html": note.ContentHtml,
 			"is_published": note.IsPublished,
@@ -485,13 +513,13 @@ func UpdateNote(c *gin.Context) {
 			"created_at":   note.CreatedAt.Format(time.RFC3339),
 			"updated_at":   note.UpdatedAt.Format(time.RFC3339),
 		}
-		
+
 		if note.FolderID != nil {
 			response["folder_id"] = *note.FolderID
 		} else {
 			response["folder_id"] = nil
 		}
-		
+
 		c.JSON(http.StatusOK, response)
 		return
 	}
@@ -511,6 +539,7 @@ func UpdateNote(c *gin.Context) {
 		"user_id":      note.UserID,
 		"title":        note.Title,
 		"slug":         note.Slug,
+		"cover_url":    note.CoverURL,
 		"content_md":   note.ContentMd,
 		"content_html": note.ContentHtml,
 		"is_published": note.IsPublished,
@@ -519,13 +548,13 @@ func UpdateNote(c *gin.Context) {
 		"created_at":   note.CreatedAt.Format(time.RFC3339),
 		"updated_at":   note.UpdatedAt.Format(time.RFC3339),
 	}
-	
+
 	if note.FolderID != nil {
 		response["folder_id"] = *note.FolderID
 	} else {
 		response["folder_id"] = nil
 	}
-	
+
 	c.JSON(http.StatusOK, response)
 }
 
@@ -569,7 +598,7 @@ func DeleteNote(c *gin.Context) {
 		response.Error(c, http.StatusInternalServerError, "INTERNAL", "Failed to delete note")
 		return
 	}
-	
+
 	// Return success
 	c.Status(http.StatusNoContent)
 }
@@ -583,8 +612,8 @@ func DeleteNote(c *gin.Context) {
 // ------------------------------------------------------------
 
 type createFolderRequest struct {
-	Name string `json:"name" binding:"required"`
-	ParentID *uint `json:"parent_id"`
+	Name     string `json:"name" binding:"required"`
+	ParentID *uint  `json:"parent_id"`
 }
 
 func CreateFolder(c *gin.Context) {
@@ -602,12 +631,12 @@ func CreateFolder(c *gin.Context) {
 	}
 
 	// Name is required, no need for default value
-	
+
 	// Create folder
-	folder := model.Folder {
-		UserID: userID.(uint),
-		Name: request.Name,
-		ParentID: request.ParentID,
+	folder := model.Folder{
+		UserID:    userID.(uint),
+		Name:      request.Name,
+		ParentID:  request.ParentID,
 		SortOrder: 0,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -621,15 +650,15 @@ func CreateFolder(c *gin.Context) {
 
 	// Return the created folder
 	response := gin.H{
-		"id": folder.ID,
-		"user_id": folder.UserID,
-		"name": folder.Name,
-		"parent_id": folder.ParentID,
+		"id":         folder.ID,
+		"user_id":    folder.UserID,
+		"name":       folder.Name,
+		"parent_id":  folder.ParentID,
 		"sort_order": folder.SortOrder,
 		"created_at": folder.CreatedAt.Format(time.RFC3339),
 		"updated_at": folder.UpdatedAt.Format(time.RFC3339),
 	}
-	
+
 	c.JSON(http.StatusCreated, response)
 }
 
@@ -642,8 +671,8 @@ func CreateFolder(c *gin.Context) {
 // ------------------------------------------------------------
 
 type updateFolderRequest struct {
-	Name string `json:"name"`
-	ParentID *uint `json:"parent_id"`
+	Name     string `json:"name"`
+	ParentID *uint  `json:"parent_id"`
 }
 
 func UpdateFolder(c *gin.Context) {
@@ -690,7 +719,7 @@ func UpdateFolder(c *gin.Context) {
 		folder.Name = req.Name
 		hasChanges = true
 	}
-	
+
 	if req.ParentID != nil {
 		folder.ParentID = req.ParentID
 		hasChanges = true
@@ -699,14 +728,14 @@ func UpdateFolder(c *gin.Context) {
 	// If no changes, return current folder (idempotent)
 	if !hasChanges {
 		response := gin.H{
-			"id": folder.ID,
-			"user_id": folder.UserID,
-			"name": folder.Name,
+			"id":         folder.ID,
+			"user_id":    folder.UserID,
+			"name":       folder.Name,
 			"sort_order": folder.SortOrder,
 			"created_at": folder.CreatedAt.Format(time.RFC3339),
 			"updated_at": folder.UpdatedAt.Format(time.RFC3339),
 		}
-		
+
 		if folder.ParentID != nil {
 			response["parent_id"] = *folder.ParentID
 		} else {
@@ -725,12 +754,12 @@ func UpdateFolder(c *gin.Context) {
 		response.Error(c, http.StatusInternalServerError, "INTERNAL", "Failed to update folder")
 		return
 	}
-	
+
 	// Return updated folder
 	response := gin.H{
-		"id": folder.ID,
-		"user_id": folder.UserID,
-		"name": folder.Name,
+		"id":         folder.ID,
+		"user_id":    folder.UserID,
+		"name":       folder.Name,
 		"sort_order": folder.SortOrder,
 		"created_at": folder.CreatedAt.Format(time.RFC3339),
 		"updated_at": folder.UpdatedAt.Format(time.RFC3339),
@@ -742,7 +771,7 @@ func UpdateFolder(c *gin.Context) {
 		response["parent_id"] = nil
 	}
 
-	c.JSON(http.StatusOK, response)	
+	c.JSON(http.StatusOK, response)
 }
 
 // ------------------------------------------------------------
@@ -753,7 +782,7 @@ func UpdateFolder(c *gin.Context) {
 func DeleteFolder(c *gin.Context) {
 	// Get folder ID from path
 	idStr := c.Param("id")
-	
+
 	// Validate ID is a number
 	idInt, err := strconv.ParseInt(idStr, 10, 32)
 	if err != nil {
@@ -783,10 +812,10 @@ func DeleteFolder(c *gin.Context) {
 	// Check if folder is empty (no subfolders or notes)
 	var subfolderCount int64
 	database.DB.Model(&model.Folder{}).Where("parent_id = ?", folderID).Count(&subfolderCount)
-	
+
 	var noteCount int64
 	database.DB.Model(&model.Note{}).Where("folder_id = ?", folderID).Count(&noteCount)
-	
+
 	if subfolderCount > 0 || noteCount > 0 {
 		response.Error(c, http.StatusBadRequest, "VALIDATION_ERROR", "folder is not empty")
 		return
@@ -816,8 +845,8 @@ type reorderTreeRequest struct {
 		SortOrder int  `json:"sort_order"`
 	} `json:"folders"`
 	Notes []struct {
-		ID        uint `json:"id"`
-		SortOrder int  `json:"sort_order"`
+		ID        uint  `json:"id"`
+		SortOrder int   `json:"sort_order"`
 		FolderID  *uint `json:"folder_id"`
 	} `json:"notes"`
 }
@@ -828,7 +857,7 @@ func ReorderTree(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, "VALIDATION_ERROR", "invalid payload")
 		return
 	}
-	
+
 	// Get user ID from JWT token
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -853,12 +882,12 @@ func ReorderTree(c *gin.Context) {
 			return
 		}
 	}
-	
+
 	// Update notes
 	for _, note := range req.Notes {
 		var n model.Note
 		if err := database.DB.Where("id = ? AND user_id = ?", note.ID, userID).First(&n).Error; err != nil {
-						if errors.Is(err, gorm.ErrRecordNotFound) {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
 				response.Error(c, http.StatusNotFound, "NOT_FOUND", "note not found")
 				return
 			}
@@ -870,7 +899,7 @@ func ReorderTree(c *gin.Context) {
 			return
 		}
 	}
-	
+
 	// Return success
 	c.Status(http.StatusOK)
 }
@@ -933,19 +962,22 @@ func ListPublicNotes(c *gin.Context) {
 
 	items := make([]gin.H, 0, len(notes))
 	for _, n := range notes {
-		excerpt := n.ContentMd
+		// Strip frontmatter block so excerpt shows real article body text
+		body := stripFrontmatter(n.ContentMd)
+		excerpt := body
 		if len([]rune(excerpt)) > 200 {
 			excerpt = string([]rune(excerpt)[:200]) + "..."
 		}
 		items = append(items, gin.H{
-			"id":               n.ID,
-			"title":            n.Title,
-			"slug":             n.Slug,
+			"id":              n.ID,
+			"title":           n.Title,
+			"slug":            n.Slug,
 			"user_id":         n.UserID,
 			"author_username": usernameByID[n.UserID],
-			"excerpt":          excerpt,
-			"created_at":       n.CreatedAt.Format(time.RFC3339),
-			"updated_at":       n.UpdatedAt.Format(time.RFC3339),
+			"excerpt":         excerpt,
+			"cover_url":       n.CoverURL,
+			"created_at":      n.CreatedAt.Format(time.RFC3339),
+			"updated_at":      n.UpdatedAt.Format(time.RFC3339),
 		})
 	}
 
@@ -992,16 +1024,17 @@ func GetPublicNote(c *gin.Context) {
 	}
 
 	resp := gin.H{
-		"id":           note.ID,
-		"user_id":      note.UserID,
-		"title":        note.Title,
-		"slug":         note.Slug,
-		"content_md":   note.ContentMd,
-		"content_html": note.ContentHtml,
-		"is_published": note.IsPublished,
-		"visibility":   note.Visibility,
-		"created_at":   note.CreatedAt.Format(time.RFC3339),
-		"updated_at":   note.UpdatedAt.Format(time.RFC3339),
+		"id":              note.ID,
+		"user_id":         note.UserID,
+		"title":           note.Title,
+		"slug":            note.Slug,
+		"cover_url":       note.CoverURL,
+		"content_md":      note.ContentMd,
+		"content_html":    note.ContentHtml,
+		"is_published":    note.IsPublished,
+		"visibility":      note.Visibility,
+		"created_at":      note.CreatedAt.Format(time.RFC3339),
+		"updated_at":      note.UpdatedAt.Format(time.RFC3339),
 		"author_username": user.Username,
 	}
 	if note.FolderID != nil {

@@ -15,6 +15,7 @@ export interface UpdateNoteRequest {
   title?: string;
   /** @nullable */
   folder_id?: number | null;
+  cover_url?: string;
   content_md?: string;
   is_published?: boolean;
   visibility?: UpdateNoteRequestVisibility;

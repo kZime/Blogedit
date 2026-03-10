@@ -19,6 +19,7 @@ export interface Note {
   title: string;
   /** @nullable */
   slug?: string | null;
+  cover_url?: string;
   content_md: string;
   content_html: string;
   is_published: boolean;

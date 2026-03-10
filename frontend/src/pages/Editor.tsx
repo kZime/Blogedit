@@ -17,6 +17,8 @@ import {
   quotePlugin,
   codeBlockPlugin,
   markdownShortcutPlugin,
+  frontmatterPlugin,
+  InsertFrontmatter,
   // toolbar items
   BoldItalicUnderlineToggles,
   BlockTypeSelect,
@@ -29,6 +31,8 @@ import {
 
 import ReactMarkdown from "react-markdown";
 import { Menu, LogOut, Plus, Trash2, X, Check, FileText, Pencil } from "lucide-react";
+import { parseFrontmatterAndBody } from "../utils/markdownCover";
+import PostHeaderCard from "../components/PostHeaderCard";
 
 // Orval generated hooks
 import {
@@ -55,8 +59,17 @@ export default function Editor() {
 
   // Current markdown content being edited
   const defaultTitle = "Untitled Page";
-  const defaultMd =
-    "# Headline here \n \n This is a paragraph \n \n This is a list \n - Item 1 \n - Item 2 \n - Item 3";
+  const defaultMd = [
+    "",
+    "# Headline here",
+    "",
+    "This is a paragraph.",
+    "",
+    "This is a list:",
+    "- Item 1",
+    "- Item 2",
+    "- Item 3",
+  ].join("\n");
 
   const [md, setMd] = useState(defaultMd);
 
@@ -64,6 +77,7 @@ export default function Editor() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [pageDetails, setPageDetails] = useState({
     title: defaultTitle,
+    coverUrl: "",
     description: "",
     tags: "",
     visibility: "private" as "private" | "public" | "unlisted",
@@ -124,6 +138,7 @@ export default function Editor() {
       setMd(note.content_md || "");
       setPageDetails({
         title,
+        coverUrl: note.cover_url || "",
         description: "",
         tags: "",
         visibility: vis,
@@ -186,6 +201,7 @@ export default function Editor() {
         setMd(result.data.content_md || "");
         setPageDetails({
           title,
+          coverUrl: "",
           description: "",
           tags: "",
           visibility: vis,
@@ -203,11 +219,10 @@ export default function Editor() {
       await deleteNoteMutation.mutateAsync({ id });
       if (currentNoteId === id) {
         setCurrentNoteId(null);
-        setMd(
-          "# Headline here \n \n This is a paragraph \n \n This is a list \n - Item 1 \n - Item 2 \n - Item 3"
-        );
+        setMd(defaultMd);
         setPageDetails({
-          title: "Untitled Page",
+          title: defaultTitle,
+          coverUrl: "",
           description: "",
           tags: "",
           visibility: "private",
@@ -230,6 +245,7 @@ export default function Editor() {
     try {
       const updateData: UpdateNoteRequest = {
         title: pageDetails.title,
+        cover_url: pageDetails.coverUrl,
         content_md: md,
         is_published: pageDetails.visibility === "public",
         visibility: pageDetails.visibility as "private" | "public" | "unlisted",
@@ -264,6 +280,7 @@ export default function Editor() {
     setMd(note.content_md || "");
     setPageDetails({
       title,
+      coverUrl: note.cover_url || "",
       description: "",
       tags: "",
       visibility: vis,
@@ -295,6 +312,7 @@ export default function Editor() {
     try {
       const updateData: UpdateNoteRequest = {
         title: pageDetails.title,
+        cover_url: pageDetails.coverUrl,
         content_md: md,
         is_published: pageDetails.visibility === "public",
         visibility: pageDetails.visibility as "private" | "public" | "unlisted",
@@ -439,11 +457,10 @@ export default function Editor() {
                 <li key={n.id}>
                   <div className="group flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-200/80 dark:hover:bg-gray-700/80 transition-colors">
                     <button
-                      className={`text-left flex-1 truncate px-2 py-1 rounded-md transition-colors ${
-                        currentNoteId === n.id
-                          ? "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 font-medium"
-                          : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                      }`}
+                      className={`text-left flex-1 truncate px-2 py-1 rounded-md transition-colors ${currentNoteId === n.id
+                        ? "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 font-medium"
+                        : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }`}
                       onClick={() => handleSelectNote(n)}
                       title={n.title}
                     >
@@ -486,13 +503,12 @@ export default function Editor() {
                   placeholder="Enter page title..."
                 />
                 <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium shrink-0 ${
-                    pageDetails.visibility === "public"
-                      ? "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200"
-                      : pageDetails.visibility === "unlisted"
-                        ? "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200"
-                        : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
-                  }`}
+                  className={`inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium shrink-0 ${pageDetails.visibility === "public"
+                    ? "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200"
+                    : pageDetails.visibility === "unlisted"
+                      ? "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200"
+                      : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                    }`}
                 >
                   {pageDetails.visibility === "public"
                     ? "Public"
@@ -507,22 +523,20 @@ export default function Editor() {
                 <button
                   type="button"
                   onClick={() => setViewMode("edit")}
-                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                    viewMode === "edit"
-                      ? "bg-gray-800 dark:bg-gray-600 text-white"
-                      : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-                  }`}
+                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${viewMode === "edit"
+                    ? "bg-gray-800 dark:bg-gray-600 text-white"
+                    : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                    }`}
                 >
                   Edit
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewMode("preview")}
-                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                    viewMode === "preview"
-                      ? "bg-gray-800 dark:bg-gray-600 text-white"
-                      : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-                  }`}
+                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${viewMode === "preview"
+                    ? "bg-gray-800 dark:bg-gray-600 text-white"
+                    : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                    }`}
                 >
                   Preview
                 </button>
@@ -539,6 +553,7 @@ export default function Editor() {
                       markdown={md}
                       onChange={setMd}
                       plugins={[
+                        frontmatterPlugin(),
                         toolbarPlugin({
                           toolbarContents: () => (
                             <>
@@ -549,6 +564,8 @@ export default function Editor() {
                               <BoldItalicUnderlineToggles />
                               <Separator />
                               <ListsToggle />
+                              <Separator />
+                              <InsertFrontmatter />
                               <Separator />
                               <CreateLink />
                               <Separator />
@@ -587,12 +604,17 @@ export default function Editor() {
                   </div>
                 </>
               ) : (
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm dark:shadow-none border border-gray-200/80 dark:border-gray-700 min-h-[70vh] transition-colors">
-                  <div className="prose prose-gray dark:prose-invert max-w-none">
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                      {pageDetails.title || "Untitled"}
-                    </h1>
-                    <ReactMarkdown>{md || ""}</ReactMarkdown>
+                <div className="space-y-4">
+                  <PostHeaderCard
+                    title={pageDetails.title || "Untitled"}
+                    coverUrl={pageDetails.coverUrl || null}
+                  />
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm dark:shadow-none border border-gray-200/80 dark:border-gray-700 min-h-[40vh] transition-colors">
+                    <div className="prose prose-gray dark:prose-invert max-w-none">
+                      <ReactMarkdown>
+                        {parseFrontmatterAndBody(md || "").body}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               )}
@@ -711,6 +733,33 @@ export default function Editor() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter page title"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Cover Image URL
+                </label>
+                <input
+                  type="url"
+                  value={pageDetails.coverUrl}
+                  onChange={(e) =>
+                    handlePageDetailsChange("coverUrl", e.target.value)
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://example.com/cover.jpg"
+                />
+                {pageDetails.coverUrl && (
+                  <div className="mt-2 rounded-lg overflow-hidden aspect-[16/9] bg-gray-100 dark:bg-gray-900">
+                    <img
+                      src={pageDetails.coverUrl}
+                      alt="Cover preview"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
               <div>
