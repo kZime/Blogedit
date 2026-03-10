@@ -64,7 +64,7 @@ export default function PostDetail() {
   const isAuthor = note && currentUserId !== null && note.user_id === currentUserId;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       <SiteHeader
         showPostsLink
         editLink={
@@ -75,25 +75,27 @@ export default function PostDetail() {
       />
 
       <main className="max-w-3xl mx-auto px-4 py-8">
-        {loading && <p className="text-gray-500">Loading…</p>}
+        {loading && (
+          <p className="text-gray-500 dark:text-gray-400">Loading…</p>
+        )}
         {error && (
-          <p className="text-red-600">
+          <p className="text-red-600 dark:text-red-400">
             {error}{" "}
-            <Link to="/" className="underline">
+            <Link to="/" className="underline hover:no-underline">
               Back to posts
             </Link>
           </p>
         )}
 
         {note && !loading && (
-          <article className="bg-white rounded-lg border border-gray-200 p-6 md:p-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          <article className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 md:p-8 shadow-sm dark:shadow-none">
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2 tracking-tight">
               {note.title || "(Untitled)"}
             </h1>
-            <p className="text-gray-500 text-sm mb-6">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
               {note.author_username} · {formatDate(note.updated_at)}
             </p>
-            <div className="prose prose-gray max-w-none">
+            <div className="prose prose-gray dark:prose-invert max-w-none prose-headings:text-gray-900 dark:prose-headings:text-gray-100 prose-p:text-gray-700 dark:prose-p:text-gray-300">
               <ReactMarkdown>{note.content_md || ""}</ReactMarkdown>
             </div>
           </article>

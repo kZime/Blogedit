@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
+import { X } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useAuthModal } from "../contexts/AuthModalContext";
 import type { AuthModalMode } from "../contexts/AuthModalContext";
@@ -141,55 +142,55 @@ export default function AuthModal() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 dark:bg-black/50"
       onClick={handleClose}
       role="dialog"
       aria-modal="true"
       aria-label={isLogin ? "Login" : "Register"}
     >
       <div
-        className="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-sm overflow-hidden"
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-sm overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 pt-6 pb-2 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-700">
           <div>
-            <h1 className="text-xl font-semibold text-gray-800">Blogedit</h1>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Blogedit</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
               {isLogin ? "Sign in to your account" : "Create an account"}
             </p>
           </div>
           <button
             type="button"
             onClick={closeAuthModal}
-            className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             aria-label="Close"
           >
-            <span className="text-xl leading-none">×</span>
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {isLogin ? (
           <form onSubmit={handleLogin} className="p-6">
-            <h2 className="text-lg font-medium text-gray-800 mb-4">Login</h2>
-            {err && <div className="text-red-500 mb-2 text-sm">{err}</div>}
+            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Login</h2>
+            {err && <div className="text-red-500 dark:text-red-400 mb-2 text-sm">{err}</div>}
             <input
               type="email"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full mb-2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full mb-2 p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
             />
             <input
               type="password"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full mb-4 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full mb-4 p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
             />
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full p-2 bg-blue-500 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-600"
+              className="w-full p-2.5 bg-blue-500 dark:bg-blue-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-600 dark:hover:bg-blue-500 transition-colors font-medium"
             >
               {isSubmitting ? "Logging in…" : "LOGIN"}
             </button>
@@ -197,52 +198,52 @@ export default function AuthModal() {
               <button
                 type="button"
                 onClick={handleSkipLogin}
-                className="w-full mt-2 p-2 bg-orange-500 text-white rounded-md text-sm hover:bg-orange-600"
+                className="w-full mt-2 p-2 bg-orange-500 text-white rounded-lg text-sm hover:bg-orange-600 transition-colors"
               >
                 DEV: Skip Login (Mock Mode)
               </button>
             )}
-            <p className="mt-4 text-sm text-center text-gray-600">
+            <p className="mt-4 text-sm text-center text-gray-600 dark:text-gray-400">
               No account?{" "}
-              <button type="button" onClick={openRegisterModal} className="text-blue-600 hover:underline">
+              <button type="button" onClick={openRegisterModal} className="text-blue-600 dark:text-blue-400 hover:underline">
                 Register
               </button>
             </p>
           </form>
         ) : (
           <form onSubmit={handleRegister} className="p-6">
-            <h2 className="text-lg font-medium text-gray-800 mb-4">Register</h2>
-            {err && <div className="text-red-500 mb-2 text-sm">{err}</div>}
+            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Register</h2>
+            {err && <div className="text-red-500 dark:text-red-400 mb-2 text-sm">{err}</div>}
             <input
               placeholder="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full mb-2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full mb-2 p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
             />
             <input
               type="email"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full mb-2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full mb-2 p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
             />
             <input
               type="password"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full mb-4 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full mb-4 p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
             />
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full p-2 bg-green-500 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-600"
+              className="w-full p-2.5 bg-green-500 dark:bg-green-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-600 dark:hover:bg-green-500 transition-colors font-medium"
             >
               {isSubmitting ? "Creating account…" : "REGISTER"}
             </button>
-            <p className="mt-4 text-sm text-center text-gray-600">
+            <p className="mt-4 text-sm text-center text-gray-600 dark:text-gray-400">
               Already have an account?{" "}
-              <button type="button" onClick={openLoginModal} className="text-blue-600 hover:underline">
+              <button type="button" onClick={openLoginModal} className="text-blue-600 dark:text-blue-400 hover:underline">
                 Login
               </button>
             </p>
