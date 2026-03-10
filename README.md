@@ -103,6 +103,81 @@ npm run dev:mock
 > location.reload();
 > ```
 
+## Deployment with Docker Compose
+
+Docker Compose is well-suited for single-machine deployment (VPS, self-hosted). One command starts the backend, frontend, and PostgreSQL without installing Go, Node, or PostgreSQL on the host. The stack is set up for **linux/amd64** (typical Ubuntu x86_64 servers).
+
+### Ubuntu server (recommended: build on the server)
+
+On a fresh Ubuntu 22.04/24.04 (x86_64), install Docker and Compose, then run the app:
+
+```bash
+# Install Docker Engine and Compose (Ubuntu)
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo usermod -aG docker $USER
+# Log out and back in (or newgrp docker), then:
+```
+
+Then in the project directory (clone first if needed):
+
+```bash
+git clone https://github.com/kZime/Blogedit.git
+cd Blogedit
+cp .env.docker.example .env
+# Edit .env: set POSTGRES_PASSWORD and JWT_SECRET (min 32 chars)
+docker compose up -d --build
+```
+
+The app will be available on port 80. To allow it through the firewall: `sudo ufw allow 80/tcp && sudo ufw enable` (if using UFW).
+
+**ARM servers (e.g. AWS Graviton):** In `docker-compose.yml`, change `platform: linux/amd64` to `platform: linux/arm64` for all three services (or remove the `platform` lines to use the host architecture).
+
+### Steps (generic)
+
+1. **Clone and enter the repo**
+   ```bash
+   git clone https://github.com/kZime/Blogedit.git
+   cd Blogedit
+   ```
+
+2. **Configure environment variables**
+   ```bash
+   cp .env.docker.example .env
+   ```
+   Edit `.env` and set at least:
+   - `POSTGRES_PASSWORD` — database password
+   - `JWT_SECRET` — random string, at least 32 characters
+
+3. **Build and start**
+   ```bash
+   docker compose up -d --build
+   ```
+   The first run builds images and starts all three services; later you can use `docker compose up -d` only.
+
+4. **Access**
+   - Frontend (with API reverse proxy): <http://localhost:80> (or the port set by `FRONTEND_PORT`)
+
+### Notes
+
+- **postgres**: Data is stored in Docker volume `postgres_data`; it persists across restarts.
+- **backend**: Go service; it waits for PostgreSQL to be healthy before starting. GORM runs migrations on first run.
+- **frontend**: Multi-stage build (Node build + Nginx serving static files) and reverse-proxies `/api` to the backend, so the app is same-origin and CORS does not need extra configuration.
+
+### Other deployment options
+
+| Scenario | Option |
+|----------|--------|
+| Single machine / small team | **Docker Compose** (recommended, as above) |
+| No server management | PaaS: Backend + DB on [Railway](https://railway.app) / [Render](https://render.com), frontend as static hosting on Vercel/Netlify |
+| Multi-instance / high availability | Kubernetes or cloud container services (e.g. ECS, Cloud Run) |
+
 ## Running Tests
 
 **Backend** (default: no setup required):

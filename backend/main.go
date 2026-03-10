@@ -13,10 +13,9 @@ import (
 
 func main() {
 
-	// Load .env file
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	// Load .env file if present (e.g. local dev); in Docker env vars are set by the runtime
+	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
+		log.Fatal("Error loading .env file: ", err)
 	}
 
 	// Init database

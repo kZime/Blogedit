@@ -1,0 +1,8 @@
+.env
+.env.*
+! .env_sample
+*.test
+*.log
+.git
+.gitignore
+README*
