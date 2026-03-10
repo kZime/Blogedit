@@ -3,7 +3,7 @@
 
 
 module.exports = {
-  blogedit: {
+  boardit: {
     input: '../backend/docs/api/api-contract-v1.yaml',
     output: {
       target: 'src/api/gen/client.ts',

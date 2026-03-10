@@ -68,7 +68,7 @@ export default function Login() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4 transition-colors">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 w-full max-w-sm overflow-hidden">
         <div className="px-6 pt-6 pb-4 text-center border-b border-gray-100 dark:border-gray-700">
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Blogedit</h1>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Boardit</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Sign in to your account</p>
         </div>
         <form onSubmit={onSubmit} className="p-6">

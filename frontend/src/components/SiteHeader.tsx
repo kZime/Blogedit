@@ -21,7 +21,7 @@ export default function SiteHeader({ showPostsLink, editLink }: SiteHeaderProps)
           to="/"
           className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
         >
-          Blogedit
+          Boardit
         </Link>
         <nav className="flex items-center gap-4">
           <button

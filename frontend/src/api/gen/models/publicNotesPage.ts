@@ -9,10 +9,11 @@ Scope: Auth & User (legacy paths) + Notes/Folder Tree/Autosave/XSS
 
  * OpenAPI spec version: 1.0.0
  */
+import type { PublicNoteListItem } from './publicNoteListItem';
 
-export interface CreateNoteRequest {
-  title?: string;
-  /** @nullable */
-  folder_id?: number | null;
-  content_md?: string;
+export interface PublicNotesPage {
+  items: PublicNoteListItem[];
+  total: number;
+  limit: number;
+  offset: number;
 }

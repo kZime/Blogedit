@@ -388,7 +388,7 @@ export default function Editor() {
             }}
             className="font-medium text-gray-800 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
           >
-            Blogedit
+            Boardit
           </Link>
           <span className="text-gray-400 dark:text-gray-500 font-normal">/ Editor</span>
         </div>
@@ -628,7 +628,7 @@ export default function Editor() {
                     <FileText className="w-10 h-10 text-gray-500 dark:text-gray-400" strokeWidth={1.5} />
                   </div>
                   <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2 tracking-tight">
-                    Welcome to Blogedit
+                    Welcome to Boardit
                   </h2>
                   <p className="text-gray-600 dark:text-gray-400 mb-8">
                     Start writing by creating a new note or selecting an existing one from the sidebar.

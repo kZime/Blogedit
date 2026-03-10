@@ -1,4 +1,4 @@
-# Blogedit Frontend
+# Boardit Frontend
 
 ## Development
 

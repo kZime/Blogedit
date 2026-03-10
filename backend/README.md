@@ -1,4 +1,4 @@
-# Blogedit Backend
+# Boardit Backend
 
 ## APIs
 

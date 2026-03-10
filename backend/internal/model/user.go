@@ -1,4 +1,4 @@
-// The user model for the blogedit backend
+// The user model for the boardit backend
 
 // backend/internal/model/user.go
 package model

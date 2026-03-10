@@ -1,7 +1,7 @@
 # sync with api-contract-v1.md
 openapi: 3.0.3
 info:
-  title: Blogedit API
+  title: Boardit API
   version: 1.0.0
   description: |
     API Contract – v1

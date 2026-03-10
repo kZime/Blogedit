@@ -4,9 +4,9 @@ services:
     image: postgres:15-alpine
     platform: linux/amd64
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-blogedit}
+      POSTGRES_USER: ${POSTGRES_USER:-boardit}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-      POSTGRES_DB: ${POSTGRES_DB:-blogedit}
+      POSTGRES_DB: ${POSTGRES_DB:-boardit}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -21,7 +21,7 @@ services:
       dockerfile: Dockerfile
     platform: linux/amd64
     environment:
-      DATABASE_DSN: host=postgres user=${POSTGRES_USER:-blogedit} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB:-blogedit} port=5432 sslmode=disable TimeZone=UTC
+      DATABASE_DSN: host=postgres user=${POSTGRES_USER:-boardit} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB:-boardit} port=5432 sslmode=disable TimeZone=UTC
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (min 32 chars)}
       GIN_MODE: release
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost,http://localhost:80}

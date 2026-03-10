@@ -35,9 +35,9 @@ const nowIso = () => new Date().toISOString()
     notesDb.push(note)
   }
   add({
-    title: 'Welcome to Blogedit',
-    slug: 'welcome-to-blogedit',
-    content_md: '# Welcome\n\nThis is your first note in Blogedit.\n\n- Edit the content\n- Change visibility\n- Save updates',
+    title: 'Welcome to Boardit',
+    slug: 'welcome-to-boardit',
+    content_md: '# Welcome\n\nThis is your first note in Boardit.\n\n- Edit the content\n- Change visibility\n- Save updates',
     is_published: false,
     visibility: NoteVisibility.private,
     sort_order: 0,

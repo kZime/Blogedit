@@ -1,4 +1,4 @@
-# Blogedit
+# Boardit
 
 A full-stack blog/note editor with Markdown support, folder organization, and JWT authentication.
 
@@ -20,7 +20,7 @@ A full-stack blog/note editor with Markdown support, folder organization, and JW
 ## Project Structure
 
 ```
-Blogedit/
+Boardit/
 ├── backend/                  # Go backend (Gin + GORM)
 │   ├── main.go
 │   ├── .env_sample           # Environment variable template
@@ -50,58 +50,62 @@ Blogedit/
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/kZime/Blogedit.git
-cd Blogedit
+git clone https://github.com/kZime/Boardit.git
+cd Boardit
 ```
 
-### 2. Set up the backend
+### 2. Start PostgreSQL (Docker only)
+
+For daily development, use Docker to run only the database — no need to build backend or frontend images:
+
+```bash
+docker compose up -d postgres
+```
+
+### 3. Set up the backend
 
 ```bash
 cd backend
-
-# Copy and fill in environment variables
 cp .env_sample .env
 ```
 
 Edit `.env`:
 
 ```env
-DATABASE_DSN="host=localhost user=<user> password=<password> dbname=blogedit port=5432 sslmode=disable TimeZone=UTC"
+DATABASE_DSN="host=localhost user=<user> password=<password> dbname=boardit port=5432 sslmode=disable TimeZone=UTC"
 JWT_SECRET="<your-random-secret>"
 ```
 
-Create the database, then start the server (GORM auto-migrates tables on first run):
+First run auto-migrates the database tables, then starts the server:
 
 ```bash
-createdb blogedit          # or use psql
 go run main.go             # starts on :8080
 ```
 
-### 3. Set up the frontend
+### 4. Set up the frontend
 
 ```bash
 cd frontend
 npm install
+npm run dev                # http://localhost:5173 (hot-reload)
 ```
 
-**Real API mode** (requires backend running):
-
-```bash
-npm run dev                # http://localhost:5173
-```
-
-**Mock mode** (no backend needed):
-
-```bash
-npm run dev:mock
-```
-
-> When switching between modes, clear localStorage in the browser console:
+> **Mock mode** (no backend needed): `npm run dev:mock`
+>
+> When switching between modes, clear localStorage:
 > ```js
 > localStorage.removeItem('accessToken');
 > localStorage.removeItem('refreshToken');
 > location.reload();
 > ```
+
+### When to use Docker Compose
+
+| Scenario | Command |
+|----------|---------|
+| Daily dev | `docker compose up -d postgres` + `go run` + `npm run dev` |
+| Verify full build before committing | `docker compose up -d --build` |
+| Deploy to server | `docker compose up -d --build` |
 
 ## Deployment with Docker Compose
 
@@ -128,8 +132,8 @@ sudo usermod -aG docker $USER
 Then in the project directory (clone first if needed):
 
 ```bash
-git clone https://github.com/kZime/Blogedit.git
-cd Blogedit
+git clone https://github.com/kZime/Boardit.git
+cd Boardit
 cp .env.docker.example .env
 # Edit .env: set POSTGRES_PASSWORD and JWT_SECRET (min 32 chars)
 docker compose up -d --build
@@ -143,8 +147,8 @@ The app will be available on port 80. To allow it through the firewall: `sudo uf
 
 1. **Clone and enter the repo**
    ```bash
-   git clone https://github.com/kZime/Blogedit.git
-   cd Blogedit
+   git clone https://github.com/kZime/Boardit.git
+   cd Boardit
    ```
 
 2. **Configure environment variables**
@@ -175,7 +179,7 @@ The app will be available on port 80. To allow it through the firewall: `sudo uf
 On the server, pull the latest code and rebuild/restart the stack:
 
 ```bash
-cd /path/to/Blogedit   # or wherever you cloned the repo
+cd /path/to/Boardit   # or wherever you cloned the repo
 git pull
 docker compose up -d --build
 ```

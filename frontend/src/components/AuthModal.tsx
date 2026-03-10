@@ -154,7 +154,7 @@ export default function AuthModal() {
       >
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-700">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Blogedit</h1>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Boardit</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
               {isLogin ? "Sign in to your account" : "Create an account"}
             </p>

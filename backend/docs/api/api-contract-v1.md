@@ -1,4 +1,4 @@
-# Blogedit API Contract – v1
+# Boardit API Contract – v1
 
 **Status:** Stable (v1)
 **Scope:** Auth & User (Sprint 1) + Notes/Folder Tree/Autosave/XSS (Sprint 1.5)
