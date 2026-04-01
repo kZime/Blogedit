@@ -18,6 +18,7 @@ export * from './error';
 export * from './errorDetails';
 export * from './errorError';
 export * from './folder';
+export * from './folderList';
 export * from './listNotesParams';
 export * from './listNotesStatus';
 export * from './listPublicNotesParams';

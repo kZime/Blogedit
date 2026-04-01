@@ -63,6 +63,7 @@ import {
 import type {
   AuthTokens,
   Folder,
+  FolderList,
   Note,
   NotesPage,
   PublicNote,
@@ -885,6 +886,92 @@ export const useDeleteNote = <TError = AxiosError<Error | Error>,
     }
     
 /**
+ * @summary List folders
+ */
+export const listFolders = (
+     options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<FolderList>> => {
+    
+    
+    return axios.default.get(
+      `/api/v1/folders`,options
+    );
+  }
+
+
+export const getListFoldersQueryKey = () => {
+    return [`/api/v1/folders`] as const;
+    }
+
+    
+export const getListFoldersQueryOptions = <TData = Awaited<ReturnType<typeof listFolders>>, TError = AxiosError<Error>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListFoldersQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listFolders>>> = ({ signal }) => listFolders({ signal, ...axiosOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListFoldersQueryResult = NonNullable<Awaited<ReturnType<typeof listFolders>>>
+export type ListFoldersQueryError = AxiosError<Error>
+
+
+export function useListFolders<TData = Awaited<ReturnType<typeof listFolders>>, TError = AxiosError<Error>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listFolders>>,
+          TError,
+          Awaited<ReturnType<typeof listFolders>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListFolders<TData = Awaited<ReturnType<typeof listFolders>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listFolders>>,
+          TError,
+          Awaited<ReturnType<typeof listFolders>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListFolders<TData = Awaited<ReturnType<typeof listFolders>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List folders
+ */
+
+export function useListFolders<TData = Awaited<ReturnType<typeof listFolders>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListFoldersQueryOptions(options)
+
+  const query = useQuery(queryOptions , queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+/**
  * @summary Create folder
  */
 export const createFolder = (
@@ -1153,6 +1240,8 @@ export const getGetNoteResponseMock = (overrideResponse: Partial< Note > = {}): 
 
 export const getUpdateNoteResponseMock = (overrideResponse: Partial< Note > = {}): Note => ({id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), user_id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), folder_id: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), null]), undefined]), title: faker.string.alpha({length: {min: 10, max: 20}}), slug: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), cover_url: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), content_md: faker.string.alpha({length: {min: 10, max: 20}}), content_html: faker.string.alpha({length: {min: 10, max: 20}}), is_published: faker.datatype.boolean(), visibility: faker.helpers.arrayElement(['private','unlisted','public'] as const), sort_order: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
 
+export const getListFoldersResponseMock = (overrideResponse: Partial< FolderList > = {}): FolderList => ({items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), user_id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), name: faker.string.alpha({length: {min: 10, max: 20}}), parent_id: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), null]), undefined]), sort_order: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`})), ...overrideResponse})
+
 export const getCreateFolderResponseMock = (overrideResponse: Partial< Folder > = {}): Folder => ({id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), user_id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), name: faker.string.alpha({length: {min: 10, max: 20}}), parent_id: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), null]), undefined]), sort_order: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
 
 export const getUpdateFolderResponseMock = (overrideResponse: Partial< Folder > = {}): Folder => ({id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), user_id: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), name: faker.string.alpha({length: {min: 10, max: 20}}), parent_id: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), null]), undefined]), sort_order: faker.number.int({min: undefined, max: undefined, multipleOf: undefined}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
@@ -1290,6 +1379,18 @@ export const getDeleteNoteMockHandler = (overrideResponse?: null | ((info: Param
   })
 }
 
+export const getListFoldersMockHandler = (overrideResponse?: FolderList | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<FolderList> | FolderList)) => {
+  return http.get('*/api/v1/folders', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getListFoldersResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  })
+}
+
 export const getCreateFolderMockHandler = (overrideResponse?: Folder | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<Folder> | Folder)) => {
   return http.post('*/api/v1/folders', async (info) => {await delay(1000);
   
@@ -1347,6 +1448,7 @@ export const getBoarditAPIMock = () => [
   getGetNoteMockHandler(),
   getUpdateNoteMockHandler(),
   getDeleteNoteMockHandler(),
+  getListFoldersMockHandler(),
   getCreateFolderMockHandler(),
   getUpdateFolderMockHandler(),
   getDeleteFolderMockHandler(),

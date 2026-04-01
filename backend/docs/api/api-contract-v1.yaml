@@ -410,6 +410,26 @@ paths:
                 $ref: "#/components/schemas/Error"
 
   /api/v1/folders:
+    get:
+      tags: [Folders]
+      summary: List folders
+      operationId: listFolders
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FolderList"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
     post:
       tags: [Folders]
       summary: Create folder
@@ -686,6 +706,15 @@ components:
         - type: object
           properties:
             author_username: { type: string }
+
+    FolderList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Folder"
 
     Folder:
       type: object

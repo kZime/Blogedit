@@ -605,6 +605,41 @@ func DeleteNote(c *gin.Context) {
 
 // ------------------------------------------------------------
 // Create Folder
+// GET /api/v1/folders
+// ------------------------------------------------------------
+
+func ListFolders(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, "UNAUTHORIZED", "invalid user ID")
+		return
+	}
+	var folders []model.Folder
+	if err := database.DB.Where("user_id = ?", userID).
+		Order("sort_order asc, name asc").Find(&folders).Error; err != nil {
+		response.Error(c, http.StatusInternalServerError, "INTERNAL", "failed to list folders")
+		return
+	}
+	result := make([]map[string]interface{}, len(folders))
+	for i, f := range folders {
+		entry := map[string]interface{}{
+			"id":         f.ID,
+			"user_id":    f.UserID,
+			"name":       f.Name,
+			"sort_order": f.SortOrder,
+			"created_at": f.CreatedAt.Format(time.RFC3339),
+			"updated_at": f.UpdatedAt.Format(time.RFC3339),
+		}
+		if f.ParentID != nil {
+			entry["parent_id"] = *f.ParentID
+		} else {
+			entry["parent_id"] = nil
+		}
+		result[i] = entry
+	}
+	c.JSON(http.StatusOK, gin.H{"items": result})
+}
+
 // POST /api/v1/folders
 // Body:
 // - name: string

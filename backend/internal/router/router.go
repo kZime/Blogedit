@@ -64,8 +64,9 @@ func Setup() *gin.Engine {
 		}
 		folders := v1.Group("/folders")
 		{
-			folders.POST("", middleware.JWTMiddleware(), handler.CreateFolder)      // POST /api/v1/folders
-			folders.PATCH("/:id", middleware.JWTMiddleware(), handler.UpdateFolder) // PATCH /api/v1/folders/{id}
+			folders.GET("", middleware.JWTMiddleware(), handler.ListFolders)         // GET /api/v1/folders
+			folders.POST("", middleware.JWTMiddleware(), handler.CreateFolder)       // POST /api/v1/folders
+			folders.PATCH("/:id", middleware.JWTMiddleware(), handler.UpdateFolder)  // PATCH /api/v1/folders/{id}
 			folders.DELETE("/:id", middleware.JWTMiddleware(), handler.DeleteFolder) // DELETE /api/v1/folders/{id}
 		}
 		tree := v1.Group("/tree")

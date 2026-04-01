@@ -5,7 +5,7 @@ import "time"
 
 type Note struct {
 	ID          uint      `gorm:"primaryKey"                                          json:"id"`
-	UserID      uint      `gorm:"not null;index;constraint:OnUpdate:CASCADE"          json:"user_id"`
+	UserID      uint      `gorm:"not null;uniqueIndex:idx_user_slug;constraint:OnUpdate:CASCADE" json:"user_id"`
 	FolderID    *uint     `gorm:"index;constraint:OnUpdate:CASCADE"                   json:"folder_id"`
 	Title       string    `gorm:"type:varchar(255);not null"                          json:"title"`
 	Slug        string    `gorm:"type:varchar(255);not null;uniqueIndex:idx_user_slug" json:"slug"`
